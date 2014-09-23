@@ -1,37 +1,37 @@
 function colloc(n,left,right)
-# colloc: Calculate collocation weights
-#         r, A, B, q = colloc( n [,'left'] [,'right'])
-# inputs:
-#               n - number of interior node points
-#          'left' - include left boundary
-#         'right' - include right bounary also
-# outputs:
-#          r - vector of roots
-#          A - Matrix of first derivative weights
-#          B - Matrix of second derivative weights
-#          q - Quadrature weights.
-################################################################
-# Copyright (C) 1996, 1997 John W. Eaton
-# 
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2, or (at your option)
-# any later version.
-# 
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with Octave; see the file COPYING.  If not, write to the Free
-# Software Foundation, 59 Temple Place - Suite 330, Boston, MA
-# 02111-1307, USA.
-#
-# Adapted from Octave's colloc.cc by Steve Swinnea.
-# 
-# Converted from MATLAB/Octave to Julia by Kasper Linnestad
-####################################################################
+    # colloc: Calculate collocation weights
+    #         r, A, B, q = colloc( n [,'left'] [,'right'])
+    # inputs:
+    #               n - number of interior node points
+    #          'left' - include left boundary
+    #         'right' - include right bounary also
+    # outputs:
+    #          r - vector of roots
+    #          A - Matrix of first derivative weights
+    #          B - Matrix of second derivative weights
+    #          q - Quadrature weights.
+    ################################################################
+    # Copyright (C) 1996, 1997 John W. Eaton
+    # 
+    # This program is free software; you can redistribute it and/or modify
+    # it under the terms of the GNU General Public License as published by
+    # the Free Software Foundation; either version 2, or (at your option)
+    # any later version.
+    # 
+    # This program is distributed in the hope that it will be useful, but
+    # WITHOUT ANY WARRANTY; without even the implied warranty of
+    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    # General Public License for more details.
+    # 
+    # You should have received a copy of the GNU General Public License
+    # along with Octave; see the file COPYING.  If not, write to the Free
+    # Software Foundation, 59 Temple Place - Suite 330, Boston, MA
+    # 02111-1307, USA.
+    #
+    # Adapted from Octave's colloc.cc by Steve Swinnea.
+    # 
+    # Converted from MATLAB/Octave to Julia by Kasper Linnestad
+    ####################################################################
     if left == "left" || left == "l"
         n0 = 1
     elseif left == 0 || left == 1
