@@ -28,7 +28,7 @@ T   = Tin*ones(Nz)
 A_p      = a
 A_p[1,:] = zeros(1,Nz)
 A_p[1,1] = 1
-b_p      = 1e-3 * rho.*uz.^2
+b_p      = -100 * rho.*uz.^2
 b_p[1]   = pIn
 p        = A_p\b_p
 
