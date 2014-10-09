@@ -9,6 +9,8 @@ Inlet values:
     uz  = 1.89 m/s
 =# 
 
+=# 
+=======
 const global Nz      = 20
 const z,a,b,q        = colloc(Nz-2,1,1)
 const global I       = eye(Nz)
@@ -24,6 +26,7 @@ rho = rhoIn*ones(Nz)
 p   = pIn*ones(Nz)
 T   = Tin*ones(Nz)
 
+=======
 # Solve ergun's equation for pressure
 A_p      = a
 A_p[1,:] = zeros(1,Nz)
