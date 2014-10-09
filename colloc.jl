@@ -145,7 +145,7 @@ function jcobi(n, n0, n1, alpha, beta)
     # -- ADD INTERPOLATION POINTS AT X = 0 AND/OR X = 1
     # 
     if n0 != 0
-        root = [ 0 ; root(1:nt-1) ]
+        root = [ 0 ; root[1:nt-1] ]
     end
     if n1 == 1
         root[nt] = 1
