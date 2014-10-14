@@ -1,4 +1,4 @@
-function getHeatCapacity(temperature, coeffMatrix, molefraction)
+function getHeatCapacity(temperature, molefraction)
     #=
     %% Heat Capacity
     % Calculates the heat capacities of the components at a given temperature,
@@ -14,10 +14,9 @@ function getHeatCapacity(temperature, coeffMatrix, molefraction)
     %       $\bar{c}_p = \mathbf{y}^\mathrm{T}\mathbf{c}_p$
     =#
     
-    cp = [ones(Nz) temperature temperature.^2 temperature.^3]*coeffMatrix; 
-    # $\mathrm{[J mol^{-1}K^{-1}]}$
-        # The molefractions are given, calculate the average heat capacity
+    cp = [ones(Nz) temperature temperature.^2 temperature.^3]*cpCoeff; 
+    # $\mathrm{[J kg^{-1}K^{-1}]}$
     cp.*=molefraction
-    cp*=ones(Ncomp,1)
+    cp*=molarMass
 end
 

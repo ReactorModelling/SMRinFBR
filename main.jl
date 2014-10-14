@@ -1,6 +1,10 @@
 include("colloc.jl")
 include("getFrictionFactor.jl")
 include("getReynolds.jl")
+include("getMolarFractions.jl")
+include("getAvgMolarMass.jl")
+include("getViscosity.jl")
+include("getHeatCapacity.jl")
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -47,28 +51,29 @@ wCO2  = 0.0200*ones(Nz)
 wH2   = 0.0029*ones(Nz)
 wH2O  = 0.7218*ones(Nz)
 wN2   = 0.0641*ones(Nz)
-
-converged = false
-mu        = 3e-5
+w     = [wCH4 wCO wCO2 wH2 wH2O wN2]
+x         = getMolarFractions(w)
+mu        = getViscosity(T,x)
 Re        = getReynolds(rho, uz, mu)
 f         = getFrictionFactor(Re)
-cp        = getHeatCapacity(Tin, )
+cp        = getHeatCapacity(T,x)
 
 # Define A matrices and b vectors
-A_p      = [1 zeros(1,Nz-1); a[2:end,:]]
+A_p      = [1 zeros(1,Nz-1); A[2:end,:]]
 b_p      = [pIn; -1/dInner*(f.*rho.*uz.^2)[2:end,:]]
-A_uz     = [1 zeros(1,Nz-1); (rho.*a + (a*rho).*I)[2:end,:]]
+A_uz     = [1 zeros(1,Nz-1); (rho.*A + (A*rho).*I)[2:end,:]]
 b_uz     = [uzIn; zeros(Nz-1)]
-A_T      = [1 zeros(1,Nz-1); (rho.*cp.*a + 4*U/dInner)[2:end,:]]
+A_T      = [1 zeros(1,Nz-1); (rho.*cp.*uz.*A + 4*U/dInner)[2:end,:]]
 b_T      = [Tin; 4*U/dInner*Ta*ones(Nz-1,1)]
 
-gamma_p = 1
-gamma_uz = 1
-gamma_
+gamma_p = 0.5
+gamma_uz = 0.5
+gamma_T = 0.5
 
+converged = false
 iter = 1
 
-while (!converged && (iter <= 100))
+while (!converged && (iter <= 100000))
     println("Iteration number: $iter")
     # Solve ergun's equation for pressure
     p        = (1-gamma_p)*p + gamma_p*(A_p\b_p)
@@ -82,22 +87,28 @@ while (!converged && (iter <= 100))
     # Solve for temperature
     T = (1-gamma_T)*T + gamma_T*(A_T\b_T)
 
+    # Update parameters
+    mu        = getViscosity(T,x)
+    Re        = getReynolds(rho, uz, mu)
+    f         = getFrictionFactor(Re)
+    cp        = getHeatCapacity(T,x)
+
     # Update matrices and vectors
-    Re       = getReynolds(rho, uz, mu)
-    f        = getFrictionFactor(Re)
     b_p      = [pIn; -1/dInner*(f.*rho.*uz.^2)[2:end,:]]
-    A_uz     = [1 zeros(1,Nz-1); (rho.*a + (a*rho).*I)[2:end,:]]
-    A_T      = [1 zeros(1,Nz-1); (rho.*cp.*a + 4*U/dInner)[2:end,:]]
+    A_uz     = [1 zeros(1,Nz-1); (rho.*A + (A*rho).*I)[2:end,:]]
+    A_T      = [1 zeros(1,Nz-1); (rho.*cp.*uz.*A + 4*U/dInner.*I)[2:end,:]]
 
     # Calculate residuals
     residual_p   = sqrt((A_p*p - b_p)'*(A_p*p - b_p))[1]/pIn
     residual_uz  = sqrt((A_uz*uz - b_uz)'*(A_uz*uz - b_uz))[1]/uzIn
-    residual_A
+    residual_T   = sqrt((A_T*T-b_T)'*(A_T*T-b_T))[1]/Tin
 
-    println(residual_p)
-    println(residual_uz)
+    println("Residual of p: $residual_p")
+    println("Residual of uz: $residual_uz")
+    println("Residual of T: $residual_T")
 
-    converged = (residual_p < 1e-10) && (residual_uz < 1e-10)
+
+    converged = (residual_p < 1e-10) && (residual_uz < 1e-10) && (residual_T < 1e-10)
 
     iter += 1
 

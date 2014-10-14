@@ -1,4 +1,4 @@
-function getViscosity(temperature, S, B, molefraction)
+function getViscosity(temperature, molefraction)
     #=
     %% Viscosity
     % Calculates the viscosities of the components at a given temperature
@@ -14,13 +14,7 @@ function getViscosity(temperature, S, B, molefraction)
     %       $\mu_{i} = \frac{b_{i}T^1.5}{T+S_{i}}$
     %       $\bar{\mu} = \boldsymbol\mu^\mathrm{T}\mathbf{y}$
     =#
-    mu = zeros(Nz,Ncomp);
-    for i = 1:Ncomp
-        mu[:,i] = (B[i]*temperature.^1.5)./(temperature+S[i]);
-    end
+    mu = temperature.^(1.5)*b'./(broadcast(+,temperature,s'))
     mu.*=molefraction
     mu*=ones(Ncomp,1)
-
-
-    return mu
 end

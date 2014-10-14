@@ -3,11 +3,11 @@
 ################################################################################
 const global Nz      = 20   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
-const z,a,b,q        = colloc(Nz-2,1,1) # Collocation points and matrices
-global z
-global a
-global b
-global q
+const Z,A,B,Q        = colloc(Nz-2,1,1) # Collocation points and matrices
+global Z
+global A
+global B
+global Q
 const global I       = eye(Nz) # Identity matrix
 const global R       = 8.3145 # Gas constant [J/K mol]
 
@@ -68,7 +68,6 @@ const global actEn = [
 ################################################################################
 #                              Enthalpy data                                   #
 ################################################################################
-#=
 # Reaction enthalpies at 298K                        [J/mol]
 const global ent298 = [
                         206.1e3 # Enthalpy for rx. 1 
@@ -94,33 +93,32 @@ const global adEnt = [
 #                              Heat capacity data                              #
 ################################################################################
 
-cpCoeff
-CP(1,1) = 1.925E4;        % 1. coefficient for CH4   [J/kmoleK]
-CP(1,2) = 5.213E1;        % 2. coefficient for CH4   [J/kmoleK^2]
-CP(1,3) = 1.197E-2;       % 3. coefficient for CH4   [J/kmoleK^3]
-CP(1,4) =-1.132E-5;       % 4. coefficient for CH4   [J/kmoleK^4]
+const global cpCoeff = [
+                        1.925e4  5.213e1  1.197e-2 -1.132e-5 # CH4
+                        3.087e4 -1.285e1  2.789e-2 -1.272e-5 # CO
+                        1.980e4  7.344e1 -5.602e-2  1.715e-5 # CO2
+                        2.714e4  9.274e0 -1.381e-2  7.645e-6 # H2
+                        3.224e4  1.924e0  1.055e-2  3.596e-6 # H2O
+                        3.115e4 -1.357e1  2.268e-2 -1.168e-5 # N2
+                        ]'*1e-3
 
-CP(2,1) = 3.087E4;        % 1. coefficient for CO    [J/kmoleK]
-CP(2,2) =-1.285E1;        % 2. coefficient for CO    [J/kmoleK^2]
-CP(2,3) = 2.789E-2;       % 3. coefficient for CO    [J/kmoleK^3]
-CP(2,4) =-1.272E-5;       % 4. coefficient for CO    [J/kmoleK^4]
+################################################################################
+#                              Viscosity data                                  #
+################################################################################
 
-CP(3,1) = 1.980E4;        % 1. coefficient for CO2   [J/kmoleK]
-CP(3,2) = 7.344E1;        % 2. coefficient for CO2   [J/kmoleK^2]
-CP(3,3) =-5.602E-2;       % 3. coefficient for CO2   [J/kmoleK^3]
-CP(3,4) = 1.715E-5;       % 4. coefficient for CO2   [J/kmoleK^4]
-
-CP(4,1) = 2.714E4;        % 1. coefficient for H2    [J/kmoleK]
-CP(4,2) = 0.9274E1;       % 2. coefficient for H2    [J/kmoleK^2]
-CP(4,3) =-1.381E-2;       % 3. coefficient for H2    [J/kmoleK^3]
-CP(4,4) = 0.7645E-5;      % 4. coefficient for H2    [J/kmoleK^4]
-
-CP(5,1) = 3.224E4;        % 1. coefficient for H2O   [J/kmoleK]
-CP(5,2) = 0.1924E1;       % 2. coefficient for H2O   [J/kmoleK^2]
-CP(5,3) = 1.055E-2;       % 3. coefficient for H2O   [J/kmoleK^3]
-CP(5,4) = 0.3596E-5;      % 4. coefficient for H2O   [J/kmoleK^4]
-
-CP(6,1) = 3.115E4;        % 1. coefficient for N2    [J/kmoleK]
-CP(6,2) =-1.357E1;        % 2. coefficient for N2    [J/kmoleK^2]
-CP(6,3) = 2.680E-2;       % 3. coefficient for N2    [J/kmoleK^3]
-CP(6,4) =-1.168E-5;       % 4. coefficient for N2    [J/kmoleK^4]
+const global b = [
+                  1.00e-6 # Coefficient for CH4      [kg/msK^0.5]
+                  1.50e-6 # Coefficient for CO       [kg/msK^0.5]
+                  1.50e-6 # Coefficient for CO2      [kg/msK^0.5]
+                  0.65e-6 # Coefficient for H2       [kg/msK^0.5]
+                  1.74e-6 # Coefficient for H2O      [kg/msK^0.5]
+                  1.40e-6 # Coefficient for N2       [kg/msK^0.5]
+                  ]
+const global s = [
+                  165 # Coefficient for CH4      [K]
+                  220 # Coefficient for CO       [K]
+                  220 # Coefficient for CO2      [K]
+                  67  # Coefficient for H2       [K]
+                  626 # Coefficient for H2O      [K]
+                  108 # Coefficient for N2       [K]
+                  ]
