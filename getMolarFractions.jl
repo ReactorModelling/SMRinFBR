@@ -10,5 +10,5 @@ function getMolarFractions(omega)
     %   y:      mole fractions $\mathbf{y}$
     %           Matrix: Same as $\boldsymbol\omega$
     =#
-y=(omega./molarMass')./(omega*molarMass)
+    y=(omega./molarMass')./(omega*(1./molarMass))
 end

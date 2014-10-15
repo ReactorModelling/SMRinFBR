@@ -64,6 +64,9 @@ const global actEn = [
                         67.13e3 # Activation energy for rx. 2
                         243.9e3 # Activation energy for rx. 3
                      ]
+const global N = [-1     1   0   3   -1   0    # rx 1
+                   0    -1   1   1   -1   0    # rx 2
+                  -1     0   1   4   -2   0];  # rx 3
 
 ################################################################################
 #                              Enthalpy data                                   #

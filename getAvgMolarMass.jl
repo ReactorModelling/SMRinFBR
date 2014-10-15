@@ -1,4 +1,4 @@
-function getAvgMolarMass(molarMass, molefraction)
+function getAvgMolarMass(molefraction)
     #=
     %% Average Molar Mass
     % Calculates the average molar mass
@@ -10,5 +10,5 @@ function getAvgMolarMass(molarMass, molefraction)
     
     % $\bar{M}_\mathrm{mass} = \mathbf{M}_\mathrm{mass}^\mathrm{T}\mathbf{y}$
     =#
-    avgmolarmass = molarMass'*molefraction; #% $\mathrm{[kg mol^{-1}]}$
+    avgmolarmass = molefraction*molarMass; #% $\mathrm{[kg mol^{-1}]}$
 end

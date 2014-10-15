@@ -60,6 +60,7 @@ mu        = getViscosity(T,x)
 Re        = getReynolds(rho, uz, mu)
 f         = getFrictionFactor(Re)
 cp        = getHeatCapacity(T,x)
+M         = getAvgMolarMass(x)
 
 # Define A matrices and b vectors
 A_p      = [1 zeros(1,Nz-1); A[2:end,:]]
@@ -68,11 +69,12 @@ A_uz     = [1 zeros(1,Nz-1); (rho.*A + (A*rho).*I)[2:end,:]]
 b_uz     = [uzIn; zeros(Nz-1)]
 A_T      = [1 zeros(1,Nz-1); (rho.*cp.*uz.*A + 4*U/dInner)[2:end,:]]
 b_T      = [Tin; 4*U/dInner*Ta*ones(Nz-1,1)]
+#A_wCH4   = [1, zeros(1,Nz-1); ]
 
 # Under-relaxation factors
-gamma_p = 0.5
-gamma_uz = 0.5
-gamma_T = 0.5
+gamma_p = 0.1
+gamma_uz = 0.1
+gamma_T = 0.1
 
 converged = false
 iter = 1
@@ -83,7 +85,7 @@ while (!converged && (iter <= 100000))
     p        = (1-gamma_p)*p + gamma_p*(A_p\b_p)
 
     # Solve the ideal gas law for density
-    rho = 0.018*p./(R*T)
+    rho = M.*p./(R*T)
 
     # solve the continuity for velocity
     uz = (1-gamma_uz)*uz + gamma_uz*(A_uz\b_uz)
@@ -96,6 +98,7 @@ while (!converged && (iter <= 100000))
     Re        = getReynolds(rho, uz, mu)
     f         = getFrictionFactor(Re)
     cp        = getHeatCapacity(T,x)
+    M         = getAvgMolarMass(x)
 
     # Update matrices and vectors
     b_p      = [pIn; -1/dInner*(f.*rho.*uz.^2)[2:end,:]]
@@ -103,23 +106,26 @@ while (!converged && (iter <= 100000))
     A_T      = [1 zeros(1,Nz-1); (rho.*cp.*uz.*A + 4*U/dInner.*I)[2:end,:]]
 
     # Calculate residuals
-    residual_p   = sqrt((A_p*p - b_p)'*(A_p*p - b_p))[1]/pIn
-    residual_uz  = sqrt((A_uz*uz - b_uz)'*(A_uz*uz - b_uz))[1]/uzIn
-    residual_T   = sqrt((A_T*T-b_T)'*(A_T*T-b_T))[1]/Tin
+    residual_p   = sqrt((A_p*p - b_p)'*(A_p*p - b_p))[1]/mean(p)
+    residual_uz  = sqrt((A_uz*uz - b_uz)'*(A_uz*uz - b_uz))[1]/mean(uz)
+    residual_T   = sqrt((A_T*T-b_T)'*(A_T*T-b_T))[1]/mean(T)
     
-    println("Residual of p: $residual_p")
+    println("Residual of p:  $residual_p")
     println("Residual of uz: $residual_uz")
-    println("Residual of T: $residual_T")
+    println("Residual of T:  $residual_T")
 
-    if iter%1000 == 0
+    if iter%10 == 0
         plot(iter,residual_T,"xk")
         plot(iter,residual_p,"xr")
         plot(iter,residual_uz,"xb")
         show()
     end
 
-    converged = (residual_p < 1e-10) && (residual_uz < 1e-10) && (residual_T < 1e-10)
+    converged = (residual_p + residual_uz + residual_T) < 1e-10
 
     iter += 1
 
 end
+
+figure(2)
+plot(Z,T)
