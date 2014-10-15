@@ -5,6 +5,9 @@ include("getMolarFractions.jl")
 include("getAvgMolarMass.jl")
 include("getViscosity.jl")
 include("getHeatCapacity.jl")
+using PyPlot
+hold(true)
+yscale("log")
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -66,6 +69,7 @@ b_uz     = [uzIn; zeros(Nz-1)]
 A_T      = [1 zeros(1,Nz-1); (rho.*cp.*uz.*A + 4*U/dInner)[2:end,:]]
 b_T      = [Tin; 4*U/dInner*Ta*ones(Nz-1,1)]
 
+# Under-relaxation factors
 gamma_p = 0.5
 gamma_uz = 0.5
 gamma_T = 0.5
@@ -102,11 +106,17 @@ while (!converged && (iter <= 100000))
     residual_p   = sqrt((A_p*p - b_p)'*(A_p*p - b_p))[1]/pIn
     residual_uz  = sqrt((A_uz*uz - b_uz)'*(A_uz*uz - b_uz))[1]/uzIn
     residual_T   = sqrt((A_T*T-b_T)'*(A_T*T-b_T))[1]/Tin
-
+    
     println("Residual of p: $residual_p")
     println("Residual of uz: $residual_uz")
     println("Residual of T: $residual_T")
 
+    if iter%1000 == 0
+        plot(iter,residual_T,"xk")
+        plot(iter,residual_p,"xr")
+        plot(iter,residual_uz,"xb")
+        show()
+    end
 
     converged = (residual_p < 1e-10) && (residual_uz < 1e-10) && (residual_T < 1e-10)
 
