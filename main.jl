@@ -65,8 +65,7 @@ f   = getFrictionFactor(Re)                                    # Friction factor
 cp  = getHeatCapacity(T,x)                    # Heat capacity [J K^{-1} kg^{-1}]
 M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
 dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
-                                       # [J mol^{-1}]       [mol kg^{-1} s^{-1}]
-
+                                       # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
 
 # Define A matrices and b vectors
 A_p      = [1 zeros(1,Nz-1); A[2:end,:]]
