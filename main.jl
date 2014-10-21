@@ -5,6 +5,7 @@ include("getMolarFractions.jl")
 include("getAvgMolarMass.jl")
 include("getViscosity.jl")
 include("getHeatCapacity.jl")
+include("getReaction.jl")
 using PyPlot
 hold(true)
 yscale("log")
@@ -48,19 +49,24 @@ uz  = uzIn*ones(Nz)
 rho = rhoIn*ones(Nz)
 p   = pIn*ones(Nz)
 T   = Tin*ones(Nz)
-wCH4  = 0.1911*ones(Nz)
-wCO   = 0.0001*ones(Nz)
-wCO2  = 0.0200*ones(Nz)
-wH2   = 0.0029*ones(Nz)
-wH2O  = 0.7218*ones(Nz)
-wN2   = 0.0641*ones(Nz)
-w     = [wCH4 wCO wCO2 wH2 wH2O wN2]
-x         = getMolarFractions(w)
-mu        = getViscosity(T,x)
-Re        = getReynolds(rho, uz, mu)
-f         = getFrictionFactor(Re)
-cp        = getHeatCapacity(T,x)
-M         = getAvgMolarMass(x)
+wCH4  = wCH4in*ones(Nz)
+wCO   = wCOin*ones(Nz)
+wCO2  = wCO2in*ones(Nz)
+wH2   = wH2in*ones(Nz)
+wH2O  = wH2Oin*ones(Nz)
+wN2   = wN2in*ones(Nz)
+
+    # Calculate parameters
+w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
+x   = getMolarFractions(w)                 # Matrix with all the molar fractions
+mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
+Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
+f   = getFrictionFactor(Re)                                    # Friction factor
+cp  = getHeatCapacity(T,x)                    # Heat capacity [J K^{-1} kg^{-1}]
+M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
+dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
+                                       # [J mol^{-1}]       [mol kg^{-1} s^{-1}]
+
 
 # Define A matrices and b vectors
 A_p      = [1 zeros(1,Nz-1); A[2:end,:]]
@@ -69,18 +75,21 @@ A_uz     = [1 zeros(1,Nz-1); (rho.*A + (A*rho).*I)[2:end,:]]
 b_uz     = [uzIn; zeros(Nz-1)]
 A_T      = [1 zeros(1,Nz-1); (rho.*cp.*uz.*A + 4*U/dInner)[2:end,:]]
 b_T      = [Tin; 4*U/dInner*Ta*ones(Nz-1,1)]
-#A_wCH4   = [1, zeros(1,Nz-1); ]
+#A_wCH4   = [1 zeros(1,Nz-1); (rho.*uz.*A + uz.*(A*rho).*I + rho.*(A*uz).*I)[2:end,:]]
+
+#b_wCH4   = [wCH4in; ((1-void)*rhoCat*molarMass[1]*(reaction*N[:,1]))[2:end,:]]
 
 # Under-relaxation factors
-gamma_p = 0.1
-gamma_uz = 0.1
-gamma_T = 0.1
+gamma_p = 1
+gamma_uz = 1
+gamma_T = 0.50
 
 converged = false
 iter = 1
 
 while (!converged && (iter <= 100000))
     println("Iteration number: $iter")
+
     # Solve ergun's equation for pressure
     p        = (1-gamma_p)*p + gamma_p*(A_p\b_p)
 
@@ -92,36 +101,47 @@ while (!converged && (iter <= 100000))
 
     # Solve for temperature
     T = (1-gamma_T)*T + gamma_T*(A_T\b_T)
-
+    #println(size(A_wCH4))
+    #wCH4 = (1-gamma_T)*wCH4 + gamma_T*(A_wCH4\b_wCH4)
     # Update parameters
+    x         = getMolarFractions(w)
     mu        = getViscosity(T,x)
     Re        = getReynolds(rho, uz, mu)
     f         = getFrictionFactor(Re)
     cp        = getHeatCapacity(T,x)
     M         = getAvgMolarMass(x)
+    dH, reaction = getReaction(T,x,p)
+
 
     # Update matrices and vectors
     b_p      = [pIn; -1/dInner*(f.*rho.*uz.^2)[2:end,:]]
     A_uz     = [1 zeros(1,Nz-1); (rho.*A + (A*rho).*I)[2:end,:]]
     A_T      = [1 zeros(1,Nz-1); (rho.*cp.*uz.*A + 4*U/dInner.*I)[2:end,:]]
+    #A_wCH4   = [1 zeros(1,Nz-1); (rho.*uz.*A + uz.*(A*rho).*I + rho.*(A*uz).*I)[2:end,:]]
+    #b_wCH4   = [wCH4in; ((1-void)*rhoCat*molarMass[1]*(reaction*N[:,1]))[2:end,:]]
 
     # Calculate residuals
-    residual_p   = sqrt((A_p*p - b_p)'*(A_p*p - b_p))[1]/mean(p)
-    residual_uz  = sqrt((A_uz*uz - b_uz)'*(A_uz*uz - b_uz))[1]/mean(uz)
-    residual_T   = sqrt((A_T*T-b_T)'*(A_T*T-b_T))[1]/mean(T)
+    p_err       = vec(A_p*p - b_p)
+    uz_err      = vec(A_uz*uz - b_uz)
+    T_err       = vec(A_T*T - b_T)
+    residual_p  = sqrt(dot(p_err, p_err))/mean(p)
+    residual_uz = sqrt(dot(uz_err, uz_err))/mean(uz)
+    residual_T  = sqrt(dot(T_err, T_err))/mean(T)
+    #residual_wCH4= sqrt((A_wCH4*wCH4-b_wCH4)'*(A_wCH4*wCH4-b_wCH4))[1]/mean(wCH4)
     
     println("Residual of p:  $residual_p")
     println("Residual of uz: $residual_uz")
     println("Residual of T:  $residual_T")
+    #println("Residual of CH4:  $residual_wCH4")
 
-    if iter%10 == 0
+    if iter%2 == 0
         plot(iter,residual_T,"xk")
         plot(iter,residual_p,"xr")
         plot(iter,residual_uz,"xb")
         show()
     end
 
-    converged = (residual_p + residual_uz + residual_T) < 1e-10
+    converged = (residual_p + residual_uz + residual_T) < 1e-8
 
     iter += 1
 
@@ -129,3 +149,7 @@ end
 
 figure(2)
 plot(Z,T)
+figure(3)
+plot(Z,p)
+figure(4)
+plot(Z,uz)
