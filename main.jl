@@ -7,6 +7,7 @@ include("getViscosity.jl")
 include("getHeatCapacity.jl")
 include("getReaction.jl")
 using PyPlot
+
 hold(true)
 yscale("log")
 #=
@@ -86,7 +87,11 @@ gamma_T = 0.50
 converged = false
 iter = 1
 
-while (!converged && (iter <= 100000))
+figure(1)
+xlabel("Iteration number")
+ylabel("Residuals")
+
+while (!converged && (iter <= 1000))
     println("Iteration number: $iter")
 
     # Solve ergun's equation for pressure
@@ -98,8 +103,9 @@ while (!converged && (iter <= 100000))
     # solve the continuity for velocity
     uz = (1-gamma_uz)*uz + gamma_uz*(A_uz\b_uz)
 
-    # Solve for temperature
+    # Solve the energy balance for temperature
     T = (1-gamma_T)*T + gamma_T*(A_T\b_T)
+
     #println(size(A_wCH4))
     #wCH4 = (1-gamma_T)*wCH4 + gamma_T*(A_wCH4\b_wCH4)
     # Update parameters
@@ -133,10 +139,10 @@ while (!converged && (iter <= 100000))
     println("Residual of T:  $residual_T")
     #println("Residual of CH4:  $residual_wCH4")
 
-    if iter%2 == 0
-        plot(iter,residual_T,"xk")
-        plot(iter,residual_p,"xr")
-        plot(iter,residual_uz,"xb")
+    if iter%200 == 0
+        plot(iter, residual_T,  "xk")
+        plot(iter, residual_p,  "xr")
+        plot(iter, residual_uz, "xb")
         show()
     end
 
@@ -145,10 +151,18 @@ while (!converged && (iter <= 100000))
     iter += 1
 
 end
-
+rc("text", usetex=true)
+rc("font", family="serif")
+rc("text.latex", preamble="\\usepackage{mhchem}\\usepackage{siunitx}")
 figure(2)
 plot(Z,T)
+xlabel(L"$z\quad\SI{}{\meter}$")
+ylabel(L"$T\quad\SI{}{\kelvin}$")
 figure(3)
 plot(Z,p)
+xlabel(L"$z\quad\SI{}{\meter}$")
+ylabel(L"$p\quad\SI{}{\pascal}$")
 figure(4)
 plot(Z,uz)
+xlabel(L"$z\quad\SI{}{\meter}$")
+ylabel(L"$u_z\quad\SI{}{\meter\per\second}$")
