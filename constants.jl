@@ -1,7 +1,7 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 200   # Number of collocation points in z direction
+const global Nz      = 40   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
 const Z,A,B,Q        = colloc(Nz-2,1,1) # Collocation points and matrices
 global Z
