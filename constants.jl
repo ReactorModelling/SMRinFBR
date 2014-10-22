@@ -1,20 +1,24 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 40   # Number of collocation points in z direction
+const global Nz      = 20   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
-const Z,A,B,Q        = colloc(Nz-2,1,1) # Collocation points and matrices
-global Z
-global A
-global B
-global Q
-const global I       = eye(Nz) # Identity matrix
-const global R       = 8.3145 # Gas constant [J/K mol]
+const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"]
+const global Nr      = 6    # Number of radial discretization points
+const global Length  = 7    # [m]
+dummyZ,dummyA,dummyB,dummyQ        = colloc(Nz-2,1,1) # Collocation points and matrices
+const global Z = Length*dummyZ
+const global A = 1/Length*dummyA
+const global B = 1/Length^2*dummyB
+const global Q = dummyQ
+const global I = eye(Nz) # Identity matrix
+const global R = 8.3145 # Gas constant [J/K mol]
 
 ################################################################################
 #                              Reactor parameters                              #
 ################################################################################
 const global void     = 0.528   # Void fraction
+const global efficiency = 0.01 # Efficiency factor for pellet diffusion
 const global dInner   = 0.102   # Inner tube diameter [m]
 const global Ta       = 1100    # Ambient temperature [K]
 const global U        = 56.783  # Heat transfer coefficient [J/K m2 s]

@@ -44,13 +44,13 @@ const wN2in   = 0.0641 # Inlet mass fraction of N2
 # Initial guess
 uz  = uzIn*ones(Nz)
 p   = pIn*ones(Nz)
-T   = [Tin; 600*ones(Nz-1)]
-wCH4 = wCH4in*ones(Nz)
-wCO = wCOin*ones(Nz)
-wCO2 = wCO2in*ones(Nz)
-wH2 = wH2in*ones(Nz)
-wH2O = wH2Oin*ones(Nz)
-wN2 = wN2in*ones(Nz)
+T   = [Tin; 500*ones(Nz-1)]
+wCH4 = [wCH4in; wCH4in*ones(Nz-1)]
+wCO = [wCOin; wCOin*ones(Nz-1)]
+wCO2 = [wCO2in; wCO2in*ones(Nz-1)]
+wH2 = [wH2in; wH2in*ones(Nz-1)]
+wH2O = [wH2Oin; wH2Oin*ones(Nz-1)]
+wN2 = [wN2in; wN2in*ones(Nz-1)]
 #wCH4  = [wCH4in; zeros(Nz-1)]
 #wCO   = [wCOin; zeros(Nz-1)]
 #wCO2  = [wCO2in; zeros(Nz-1)]
@@ -97,10 +97,10 @@ b_wH2O   = [wH2Oin;
 b_wN2    = [wN2in;
             zeros(Nz-1)]
 # Under-relaxation factors
-gamma_p = 1e-1
-gamma_uz = 1e-1
-gamma_T = 1e-5
-gamma_w = 1e-4
+gamma_p = 5e-1
+gamma_uz = 5e-1
+gamma_T = 1e-2
+gamma_w0 = 1e-2
 
 converged = false
 iter = 1
@@ -112,10 +112,7 @@ while (!converged && (iter <= 1000000))
     #println("Solving for pressure")
     p = (1-gamma_p)*p + gamma_p*(A_p\b_p)
     #dp = A_p\b_p - p
-    #while minimum(p + dp) <= 0
-    #    dp /= 2
-    #end
-    #p += dp
+
     # Solve the ideal gas law for density
     rho = M.*p./(R*T)
 
@@ -128,39 +125,81 @@ while (!converged && (iter <= 1000000))
     #    duz /= 2
     #end
     #uz += duz
-    # Solve the energy balance for temperature
-    T = (1-gamma_T)*T + gamma_T*(A_T\b_T)
-    T = max(0.0, T)
-    #println("Solving for temperature")
-    #dT = A_T\b_T - T
-    #while minimum(T + dT) <= 500 || maximum(T + dT) > 1200
-    #    dT /= 2
-    #end
-    #T += dT
 
-    # Solve mass balances
-    wCH4 = (1-gamma_w)*wCH4 + gamma_w*(A_w\b_wCH4)
-    wCH4 = max(0.0, min(1.0, wCH4))
-    wCO2 = (1-gamma_w)*wCO2 + gamma_w*(A_w\b_wCO2)
-    wCO2 = max(0.0, min(1.0-wCH4, wCO2))
-    wH2 = (1-gamma_w)*wH2 + gamma_w*(A_w\b_wH2)
-    wH2 = max(0.0, min(1.0-wCH4-wCO2, wH2))
-    wH2O = (1-gamma_w)*wH2O + gamma_w*(A_w\b_wH2O)
-    wH2O = max(0.0, min(1.0-wCH4-wCO2-wH2, wH2O))
-    wN2 = (1-gamma_w)*wN2 + gamma_w*(A_w\b_wN2)
-    wN2 = max(0.0, min(1.0-wCH4-wCO2-wH2-wH2O, wN2))
-    wCO = 1 - wCH4 - wCO2 - wH2 - wH2O - wN2
-    wCO = max(0.0, min(1.0, wCO))
-    # Update parameters
-    w   = [wCH4 wCO wCO2 wH2 wH2O wN2]
-    x         = getMolarFractions(w)
-    mu        = getViscosity(T,x)
-    Re        = getReynolds(rho, uz, mu)
-    f         = getFrictionFactor(Re)
-    cp        = getHeatCapacity(T,x)
-    M         = getAvgMolarMass(x)
-    dH, reaction = getReaction(T,x,p)
+    println("Entering w-T loop")
+    wResid = 1
+    Tresid = 1
+    while wResid > 1e-2 && Tresid > 1e-2
+        dT = (A_T\b_T - T)*gamma_T
+        while maximum(T + dT ) > 1100 || minimum(T + dT) < 500
+            dT /= 10
+        end
+        T += dT
+        wMax = 2.0
+        wMin = -1.0
+        gamma_w = gamma_w0
+        while wMax > 1+1e-6 || wMin < -1e-4
+            wCH4 = (1-gamma_w)*wCH4 + gamma_w*(A_w\b_wCH4)
+            wCO2 = (1-gamma_w)*wCO2 + gamma_w*(A_w\b_wCO2)
+            wH2 = (1-gamma_w)*wH2 + gamma_w*(A_w\b_wH2)
+            wH2O = (1-gamma_w)*wH2O + gamma_w*(A_w\b_wH2O)
+            wN2 = (1-gamma_w)*wN2 + gamma_w*(A_w\b_wN2)
+            wCO = 1 - wCH4 - wCO2 - wH2 - wH2O - wN2
+            w    = [wCH4 wCO wCO2 wH2 wH2O wN2]
+            wMax = maximum(sum(w,2))
+            wMin = minimum(w)
+            wCH4 = max(0.0, min(wCH4in, wCH4))
+            wCO2 = max(0.0, min(1.0-wCH4, wCO2))
+            wH2 = max(wH2in, min(1.0-wCH4-wCO2, wH2))
+            wH2O = max(0.0, min(wH2Oin, wH2O))
+            wN2 = max(0.0, min(1.0-wCH4-wCO2-wH2-wH2O, wN2))
+            wCO = max(wCOin, min(1.0, wCO))
+            gamma_w /= 10
+        end
+        w   = [wCH4 wCO wCO2 wH2 wH2O wN2]
+        x   = getMolarFractions(w)
+        M   = getAvgMolarMass(x)
+        rho = M.*p./(R*T)
+        mu  = getViscosity(T,x)
+        Re  = getReynolds(rho, uz, mu)
+        f   = getFrictionFactor(Re)
+        cp  = getHeatCapacity(T,x)
 
+        dH, reaction = getReaction(T,x,p)
+
+        A_w      = [1 zeros(1,Nz-1);
+                    (rho.*uz.*A + uz.*(A*rho).*I + rho.*(A*uz).*I)[2:end,:]]
+        b_wCH4   = [wCH4in;
+                    ((1-void)*rhoCat*molarMass[1]*(reaction*N[:,1]))[2:end,:]]
+        b_wCO2   = [wCO2in;
+                    ((1-void)*rhoCat*molarMass[3]*(reaction*N[:,3]))[2:end,:]]
+        b_wH2    = [wH2in;
+                    ((1-void)*rhoCat*molarMass[4]*(reaction*N[:,4]))[2:end,:]]
+        b_wH2O   = [wH2Oin;
+                    ((1-void)*rhoCat*molarMass[5]*(reaction*N[:,5]))[2:end,:]]
+        b_wN2    = [wN2in;
+                    zeros(Nz-1)]
+        A_T      = [1 zeros(1,Nz-1);
+                    (rho.*cp.*uz.*A + 4*U/dInner.*I)[2:end,:]]
+        b_T      = [Tin;
+                    4*U/dInner*Ta*ones(Nz-1,1) - ((1-void)*rhoCat*dH)[2:end,:]]
+
+        wCH4_err    = vec(A_w*wCH4 - b_wCH4)
+        wCO2_err    = vec(A_w*wCO2 - b_wCO2)
+        wH2_err     = vec(A_w*wH2 - b_wH2)
+        wH2O_err    = vec(A_w*wH2O - b_wH2O)
+        wN2_err     = vec(A_w*wN2 - b_wN2)
+        wResid      = sqrt(dot(wCH4_err,wCH4_err))/mean(wCH4)
+        wResid     += sqrt(dot(wCO2_err,wCO2_err))/mean(wCO2)
+        wResid     += sqrt(dot(wH2_err,wH2_err))/mean(wH2)
+        wResid     += sqrt(dot(wH2O_err,wH2O_err))/mean(wH2O)
+        wResid     += sqrt(dot(wN2_err,wN2_err))/mean(wN2)
+        
+        T_err  = vec(A_T*T - b_T)
+        Tresid = sqrt(dot(T_err,T_err))/mean(T)
+
+        println("wResid: $wResid\tTresid: $Tresid")
+    end
 
     # Update matrices and vectors
     b_p      = [pIn;
@@ -204,26 +243,35 @@ while (!converged && (iter <= 1000000))
     
     println("Residual: $sumResidual")
 
-    converged = sumResidual < 1e-4
+    converged = sumResidual < 1e-6
 
     iter += 1
 
 end
 
 using PyPlot
-hold(true)
 rc("text", usetex=true)
 rc("font", family="serif")
-rc("text.latex", preamble="\\usepackage{mhchem}\\usepackage{siunitx}")
-figure(2)
+rc("text.latex", preamble="\\usepackage[version=3]{mhchem}\\usepackage{siunitx}")
+figure(1)
 plot(Z,T)
 xlabel(L"$z\quad\SI{}{\meter}$")
 ylabel(L"$T\quad\SI{}{\kelvin}$")
-figure(3)
+savefig("T.pdf",transparent=true,pad_inches=0)
+figure(2)
 plot(Z,p)
 xlabel(L"$z\quad\SI{}{\meter}$")
 ylabel(L"$p\quad\SI{}{\pascal}$")
-figure(4)
+savefig("p.pdf",transparent=true,pad_inches=0)
+figure(3)
 plot(Z,uz)
 xlabel(L"$z\quad\SI{}{\meter}$")
 ylabel(L"$u_z\quad\SI{}{\meter\per\second}$")
+savefig("uz.pdf",transparent=true,pad_inches=0)
+for i = 1:Ncomp
+    figure(3+i)
+    plot(Z,x[:,i])
+    xlabel(L"$z\quad\SI{}{\meter}$")
+    ylabel("\$x_\\ce{$(Comp[i])}\$")
+    savefig("$(Comp[i]).pdf",transparent=true,pad_inches=0)
+end
