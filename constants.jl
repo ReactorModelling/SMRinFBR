@@ -14,15 +14,15 @@ const global R       = 8.3145 # Gas constant [J/K mol]
 ################################################################################
 #                              Reactor parameters                              #
 ################################################################################
-const global void     = 0.528 # Void fraction
-const global dInner   = 0.102 # Inner tube diameter [m]
-const global Ta       = 1100 # Ambient temperature [K]
-const global U        = 56.783 # Heat transfer coefficient [J/K m2 s]
-const global rhoCat   = 2355.2;  # Catalyst density          [kgcat/m^3]
-const global dParticle     = 0.0173; # Particle diameter         [m]
-const global lambdaSt  = 52 # Heat coef. for tube metal[W/mK]
-const global rInner = dInner/2 # Inner tube radius [m]
-const global rOuter = 0.066 # Outer tube radius [m]
+const global void     = 0.528   # Void fraction
+const global dInner   = 0.102   # Inner tube diameter [m]
+const global Ta       = 1100    # Ambient temperature [K]
+const global U        = 56.783  # Heat transfer coefficient [J/K m2 s]
+const global rhoCat   = 2355.2; # Catalyst density          [kgcat/m^3]
+const global dParticle = 0.0173;# Particle diameter         [m]
+const global lambdaSt  = 52     # Heat coef. for tube metal[W/mK]
+const global rInner = dInner/2  # Inner tube radius [m]
+const global rOuter = 0.066     # Outer tube radius [m]
 
 
 
@@ -125,3 +125,27 @@ const global s = [
                   626 # Coefficient for H2O      [K]
                   108 # Coefficient for N2       [K]
                   ]
+################################################################################
+#                               Conductivity data                              #
+################################################################################
+const global lambda = [
+                      -1.8690e-03   8.7270e-05   1.1790e-07  -3.6140e-11  # CH4 [W/mK^n]
+                       5.0670e-04   9.1025e-05  -3.5240e-08   8.1990e-12  # CO  [W/mK^n]
+                      -7.2150e-03   8.0150e-05   5.4770e-09  -1.0530e-11  # CO2 [W/mK^n]
+                       8.0990e-03   6.6890e-04  -4.1580e-07   1.5620e-10  # H2  [W/mK^n]
+                       7.3410e-03  -1.0130e-05   1.8010e-07  -9.1000e-11  # H2O [W/mK^n]
+                       3.9190e-04   9.9660e-05  -5.0670e-08   1.5040e-11  # N2  [W/mK^n]
+                      ]
+
+################################################################################
+#                               Diffusion Volumes                              #
+################################################################################
+const global sumV = [
+                       2.5140e+01   # CH4 [-]
+                       1.8010e+01   # CO  [-]
+                       2.6900e+01   # CO2 [-]
+                       6.1200e+00   # H2  [-]
+                       1.3100e+01   # H2O [-]
+                       1.8500e+01   # N2  [-]
+                      ]
+
