@@ -14,7 +14,7 @@ function getHeatCapacity(temperature, molefraction)
     %       $\bar{c}_p = \mathbf{y}^\mathrm{T}\mathbf{c}_p$
     =#
     
-    cp = [ones(Nz) temperature temperature.^2 temperature.^3]*cpCoeff; 
+    cp = [ones(Nglob) temperature temperature.^2 temperature.^3]*cpCoeff; 
     # $\mathrm{[J kg^{-1}K^{-1}]}$
     cp.*=molefraction
     cp*=molarMass

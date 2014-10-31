@@ -24,13 +24,13 @@ function getReaction( T, y, P)
     pComp=(p.*y)*1e-5;
 
     #% Initialization: reaction rate for each point in the r-direction
-    rrx = zeros(Nz,3);
+    rrx = zeros(Nglob,3);
     #% Initialization: denominator in the rate expression for each point in 
     #% the r-direction
-    denom = zeros(Nz);
+    denom = zeros(Nglob);
     Keq=zeros(3);
 
-    for i=1:Nz
+    for i=1:Nglob
         #% Rate constant
         Krx  = aj.*exp(-actEn./(R*T[i]));
         

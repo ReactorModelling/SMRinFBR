@@ -1,17 +1,23 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 20   # Number of collocation points in z direction
+const global Nz      = 5   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
 const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"]
-const global Nr      = 6    # Number of radial discretization points
+const global Nr      = 4    # Number of radial discretization points
+const global Nglob   = Nz*Nr
 const global Length  = 7    # [m]
+const global Radius  = 0.102/2 # [m]
 dummyZ,dummyA,dummyB,dummyQ        = colloc(Nz-2,1,1) # Collocation points and matrices
 const global Z = Length*dummyZ
-const global A = 1/Length*dummyA
-const global B = 1/Length^2*dummyB
-const global Q = dummyQ
-const global I = eye(Nz) # Identity matrix
+const global LagAz = 1/Length*dummyA
+const global LagBz = 1/Length^2*dummyB
+const global Lagz = eye(Nz) # Identity matrix
+dummyR,dummyA,dummyB,dummyQ = colloc(Nr-2,1,1)
+const global r = dummyR
+const global LagAr = 1/Radius*dummyA
+const global LagBr = 1/Radius^2*dummyB
+const global Lagr = eye(Nr)
 const global R = 8.3145 # Gas constant [J/K mol]
 
 ################################################################################
@@ -19,7 +25,7 @@ const global R = 8.3145 # Gas constant [J/K mol]
 ################################################################################
 const global void     = 0.528   # Void fraction
 const global efficiency = 0.01 # Efficiency factor for pellet diffusion
-const global dInner   = 0.102   # Inner tube diameter [m]
+const global dInner   = 2*Radius   # Inner tube diameter [m]
 const global Ta       = 1100    # Ambient temperature [K]
 const global U        = 56.783  # Heat transfer coefficient [J/K m2 s]
 const global rhoCat   = 2355.2; # Catalyst density          [kgcat/m^3]
