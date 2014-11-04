@@ -6,14 +6,8 @@ function continuityEquation(uz, rho, A)
             for jZ = 1:Nz
                 for jR = 1:Nr
                     jGlob = jR + (jZ-1)*(Nr)
-                        println("iR: $iR")
-                        println("jR: $jR")
-                        println("iZ: $iZ")
-                        println("jZ: $jZ")
-                        println("iGlob: $iGlob")
-                        println("jGlob: $jGlob")
                     if iR == 1 || iR == Nr
-                        A[iGlob,jGlob] = Lagz[iZ,jZ] + LagAr[iR,jR]
+                        A[iGlob,jGlob] = Lagz[iZ,jZ]*LagAr[iR,jR]
                     else
                         A[iGlob,jGlob] = rho[iGlob]*LagAz[iZ,jZ]*Lagr[iR,jR] +
                                          rho[jGlob]*LagAz[iZ,jZ]*Lagr[iR,jR]

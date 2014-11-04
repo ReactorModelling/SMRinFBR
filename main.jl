@@ -8,6 +8,8 @@ include("getViscosity.jl")
 include("getHeatCapacity.jl")
 include("getReaction.jl")
 include("continuityEquation.jl")
+include("crossSectionalAverage.jl")
+include("ergunEquation.jl")
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -41,9 +43,9 @@ const global wN2in   = 0.0641 # Inlet mass fraction of N2
 
 
 # Initial guess
-uz      = uzIn*rand(Nglob)
+uz      = uzIn*ones(Nglob)
 p       = pIn*ones(Nglob)
-T       = [Tin*ones(Nr); 500.0*ones(Nglob-Nr)]
+T       = [Tin*ones(Nr); 500.0 + 100*rand(Nglob-Nr)] #Tin*ones(Nglob)#
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob)
 wCO2    = wCO2in*ones(Nglob)
@@ -62,6 +64,19 @@ cp  = getHeatCapacity(T,x)                    # Heat capacity [J K^{-1} kg^{-1}]
 dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
                                        # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
 
-A = zeros(Nglob,Nglob)
-b = zeros(Nglob)
-continuityEquation(uz,rho,A,b)
+A_uz = zeros(Nglob,Nglob)
+b_uz = zeros(Nglob)
+continuityEquation(uz, rho, A_uz, b_uz)
+A_p = zeros(Nz,Nz)
+b_p = zeros(Nz)
+ergunEquation(p, rho, uz, f, A_p, b_p)
+
+for i = 1:100
+    p = kron(A_p\b_p, ones(Nr))
+    rho = M.*p./(R*T)
+    uz = A_uz\b_uz
+
+    continuityEquation(uz, rho, A_uz)
+    ergunEquation(p, rho, uz, f, b_p)
+    
+end
