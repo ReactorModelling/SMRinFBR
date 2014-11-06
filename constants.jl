@@ -4,6 +4,7 @@
 const global Nz      = 5   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
 const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"]
+const global CompIndex = [1 3 4 5 6]
 const global Nr      = 4    # Number of radial discretization points
 const global Nglob   = Nz*Nr
 const global Length  = 7    # [m]
@@ -24,7 +25,7 @@ const global R = 8.3145 # Gas constant [J/K mol]
 #                              Reactor parameters                              #
 ################################################################################
 const global void     = 0.528   # Void fraction
-const global efficiency = 0.01 # Efficiency factor for pellet diffusion
+const global efficiency = 1e-3 # Efficiency factor for pellet diffusion
 const global dInner   = 2*Radius   # Inner tube diameter [m]
 const global Ta       = 1100    # Ambient temperature [K]
 #const global U        = 56.783  # Heat transfer coefficient [J/K m2 s]

@@ -10,6 +10,8 @@ include("getReaction.jl")
 include("continuityEquation.jl")
 include("crossSectionalAverage.jl")
 include("ergunEquation.jl")
+include("getHeatCoefficients.jl")
+include("energyEquation.jl")
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -63,6 +65,7 @@ f   = getFrictionFactor(Re)                                    # Friction factor
 cp  = getHeatCapacity(T,x)                    # Heat capacity [J K^{-1} kg^{-1}]
 dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
                                        # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
+lambdaEff, U = getHeatCoefficients(Re, T, x, mu, cp, M)
 
 A_uz = zeros(Nglob,Nglob)
 b_uz = zeros(Nglob)
@@ -70,7 +73,13 @@ continuityEquation(uz, rho, A_uz, b_uz)
 A_p = zeros(Nz,Nz)
 b_p = zeros(Nz)
 ergunEquation(p, rho, uz, f, A_p, b_p)
-
+A_T = zeros(Nglob, Nglob)
+b_T = zeros(Nglob)
+energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
+A_w = {zeros(Nglob,Nglob) for i in CompIndex}
+b_w = {zeros(Nglob) for i in CompIndex}
+speciesMassBalance()
+#=
 for i = 1:100
     p = kron(A_p\b_p, ones(Nr))
     rho = M.*p./(R*T)
@@ -79,6 +88,6 @@ for i = 1:100
     continuityEquation(uz, rho, A_uz)
     ergunEquation(p, rho, uz, f, b_p)
 
-
-
 end
+
+=#

@@ -1,4 +1,4 @@
-function gethHeatCoefficients(Re,T,Y,gasViscosity,cpGas,avgMolarMass)
+function getHeatCoefficients(Re,T,Y,gasViscosity,cpGas,avgMolarMass)
 #=
 % heatcoef
 % The function computes the heat transfer coefficient for radial transport of
@@ -23,7 +23,7 @@ phi     = 0.3;
 
 
 # %Calculates the gas heat conductivity
-Tmatrix     = [ones(size(T)); T; T.^2; T.^3];
+Tmatrix     = [ones(size(T)) T T.^2 T.^3];
 lambdag     = Tmatrix*lambda';
 lambdag   .*= Y;
 lambdag    *= ones(Ncomp)
@@ -41,10 +41,10 @@ lambdaer0 = lambdag.*(void*(1 + beta*dParticle*alpharv./lambdag) +
 lambdaer = lambdaer0+0.14*lambdag.*Re.*Pr;
 
 # %Heat transfer coefficient near the wall
-alphaw0=8.694/(2*rInner)^(4/3)*lambdaer0(Nr);
-alphaw=alphaw0+0.444*Re(Nr)*Pr(Nr)*lambdag(Nr)/dParticle;
-
+alphaw0=8.694/(dInner)^(4/3)*lambdaer0[Nr:Nr:end];
+alphaw=alphaw0+0.444*Re[Nr:Nr:end].*Pr[Nr:Nr:end].*lambdag[Nr:Nr:end]/dParticle;
+Ur=(rInner*log(rOuter/rInner)/lambdaSt+1./alphaw).^(-1);
 # %Overall heat transfer coefficient
-Ur=(rInner*log(rOuter/rInner)/lambdaSt+1/alphaw)^(-1);
+return lambdaer, Ur
 
 end

@@ -55,7 +55,7 @@ function getReaction( T, y, P)
         rrx[i,3]= Krx[3]/(pComp[i,4])^3.5*(pComp[i,1]*(pComp[i,5])^2
             - (pComp[i,4])^4*pComp[i,3]/Keq[3])/(denom[i])^2;
     end
-    rrx *= efficiency
+    rrx *= efficiency*(1-void)*rhoCat
     deltaH = sum(deltaH.*rrx,2)
     return (deltaH, rrx)
 
