@@ -45,7 +45,7 @@ const global wN2in   = 0.0641 # Inlet mass fraction of N2
 # Initial guess
 uz      = uzIn*ones(Nglob)
 p       = pIn*ones(Nglob)
-T       = [Tin*ones(Nr); 500.0 + 100*rand(Nglob-Nr)] #Tin*ones(Nglob)#
+T       = [Tin*ones(Nr); 500.0*ones(Nglob-Nr)] #Tin*ones(Nglob)#
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob)
 wCO2    = wCO2in*ones(Nglob)
@@ -78,5 +78,7 @@ for i = 1:100
 
     continuityEquation(uz, rho, A_uz)
     ergunEquation(p, rho, uz, f, b_p)
-    
+
+
+
 end
