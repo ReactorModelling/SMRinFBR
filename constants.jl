@@ -1,11 +1,11 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 5   # Number of collocation points in z direction
+const global Nz      = 8   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
 const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"]
-const global CompIndex = [1 3 4 5 6]
-const global Nr      = 4    # Number of radial discretization points
+const global CompIndex = [4, 5, 1, 3, 6]
+const global Nr      = 5    # Number of radial discretization points
 const global Nglob   = Nz*Nr
 const global Length  = 7    # [m]
 const global Radius  = 0.102/2 # [m]
@@ -27,8 +27,7 @@ const global R = 8.3145 # Gas constant [J/K mol]
 const global void     = 0.528   # Void fraction
 const global efficiency = 1e-3 # Efficiency factor for pellet diffusion
 const global dInner   = 2*Radius   # Inner tube diameter [m]
-const global Ta       = 1100    # Ambient temperature [K]
-#const global U        = 56.783  # Heat transfer coefficient [J/K m2 s]
+const global Ta       = 1100.0    # Ambient temperature [K]
 const global rhoCat   = 2355.2; # Catalyst density          [kgcat/m^3]
 const global dParticle = 0.0173;# Particle diameter         [m]
 const global lambdaSt  = 52     # Heat coef. for tube metal[W/mK]

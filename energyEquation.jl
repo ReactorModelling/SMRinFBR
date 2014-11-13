@@ -9,8 +9,7 @@ function energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A, b)
                     if iR == 1
                         A[iGlob,jGlob] = Lagz[iZ,jZ]*LagAr[iR,jR]
                     elseif iR == Nr
-                        A[iGlob,jGlob] = Lagz[iZ,jZ]*LagAr[iR,jR]
-                                       + U[iR]/lambdaEff[iGlob]
+                        A[iGlob,jGlob] = lambdaEff[iGlob]*Lagz[iZ,jZ]*LagAr[iR,jR]
                     else
                         A[iGlob,jGlob] = 
                         (
@@ -31,9 +30,9 @@ function energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A, b)
             if iR == 1
                 b[iGlob] = 0
             elseif iR == Nr
-                b[iGlob] = U[iR]/lambdaEff[iGlob]*Ta
+                b[iGlob] = -U[iZ]*(T[iGlob] - Ta)
             else
-                b[iGlob] = dH[iGlob]
+                b[iGlob] = -dH[iGlob]
             end
         end
     end

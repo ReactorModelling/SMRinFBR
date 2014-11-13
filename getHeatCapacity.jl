@@ -17,6 +17,6 @@ function getHeatCapacity(temperature, molefraction)
     cp = [ones(Nglob) temperature temperature.^2 temperature.^3]*cpCoeff; 
     # $\mathrm{[J kg^{-1}K^{-1}]}$
     cp.*=molefraction
-    cp*=molarMass
+    cp*=1./molarMass
 end
 
