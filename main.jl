@@ -61,12 +61,12 @@ wH2     = [wH2in*ones(Nr); 0.0643ones(Nglob - Nr)]
 wH2O    = [wH2Oin*ones(Nr); 0.4954ones(Nglob - Nr)]
 =#
 wN2     = wN2in*ones(Nglob)
-
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob) 
 wCO2    = wCO2in*ones(Nglob) 
 wH2     = wH2in*ones(Nglob) 
 wH2O    = wH2Oin*ones(Nglob) 
+
 
 w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
 w ./= sum(w,2)
@@ -101,8 +101,8 @@ speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
 gamma_w = 1e-2
 gamma_T = 5e-2
-Gamma_T = 1e-4
-Gamma_w = 1e-4
+Gamma_T = 5e-1
+Gamma_w = 5e-1
 totIter = 1
 maxIter = 100000
 totRes  = 1.0
@@ -124,53 +124,53 @@ while totRes > 1e-2
     while res_uz > 1e-6 && iter < maxIter
         uz = A_uz\b_uz
         continuityEquation(uz, rho, A_uz)
-
         res_uz = norm(A_uz*uz - b_uz)/abs(mean(uz))
         iter += 1
     end
     println("uz iterations: $iter")
     println("uz residual : $res_uz")
+
     Told = copy(T)
     res_T = norm(A_T*T - b_T)/mean(T)
     iter = 1
-    while res_T > 1e-5 && iter < maxIter
-        #
-
+    while res_T > 1e-6 && iter < maxIter
         T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
-
         energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
         res_T = norm(A_T*T - b_T)/abs(mean(T))
-
         iter += 1
     end
+
+    while minimum(T) < 300 || maximum(T) > Ta
+        T = Gamma_T*T + (1 - Gamma_T)*Told
+    end
+
     println("T iterations: $iter")
     println("T residual : $res_T")
     println("Min T: $(minimum(T))")
 
-    T = Gamma_T*T + (1 - Gamma_T)*Told
-
+    
 
     for i = 1:length(CompIndex)
         c = CompIndex[i]
         wOld = copy(w[:,c])
         res_w = norm(A_w[i]*w[:,c] - b_w[i])
         iter = 1
-        while res_w > 1e-5 && iter < maxIter
+        while res_w > 1e-6 && iter < maxIter
             w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1 - gamma_w)*w[:,c]
-            #w[:,c] = max(0.0, min(1.0, w[:,c]))
             speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
             res_w = norm(A_w[i]*w[:,c] - b_w[i])/abs(mean(w[:,c]))
             iter += 1
         end
         println("$(Comp[CompIndex[i]]) iterations: $iter")
         println("$(Comp[CompIndex[i]]) residual : $res_w")
-        w[:,c] = Gamma_w*w[:,c] + (1-Gamma_w)*wOld
-
+        while minimum(w[:,c]) < 0  || maximum(w[:,c]) > 1
+            w[:,c] = Gamma_w*w[:,c] + (1-Gamma_w)*wOld
+        end
     end
 
-    w[:,2] = 1 - sum(w[:,CompIndex],2)
-    w   = max(SMALL, min(1.0, w))
-    w ./= sum(w,2)
+    w[:,6] = 1 - sum(w[:,CompIndex],2)
+    println("minW: $(minimum(w))")
+
     x   = getMolarFractions(w)                 # Matrix with all the molar fractions
     M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
     rho = M.*p./(R*T)
@@ -193,8 +193,13 @@ while totRes > 1e-2
     res_T   = norm(A_T*T - b_T)/mean(T)
     res_w   = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i]) for i in 1:length(CompIndex)])
     totRes  = res_p + res_uz + res_T + res_w
+    println("p residual: $res_p")
+    println("uz residual $res_uz")
+    println("T residual $res_T")
+    println("w residual $res_w")
     println("Total resisdual: $totRes")
     println("Outer loop iterations: $totIter")
     semilogy([totIter],[totRes], "x")
+    plot([totIter],[totRes], "x")
     totIter += 1
 end

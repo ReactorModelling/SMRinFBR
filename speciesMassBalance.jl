@@ -14,9 +14,9 @@ function speciesMassBalance(w, rho, uz, reaction, D, A, b)
                         else
                             A_w[iGlob,jGlob] = 
                             (
-                                rho[iGlob]*uz[iGlob]*w[jGlob,c]*Lagr[iR,jR]*LagAz[iZ,jZ]
-                              + uz[iGlob]*w[iGlob,c]*rho[jGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
-                              + rho[iGlob]*w[iGlob,c]*uz[jGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
+                                rho[iGlob]*uz[iGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
+                              + uz[iGlob]*rho[jGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
+                              + rho[iGlob]*uz[jGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
                               - D[iGlob]
                               * (
                                     rho[iGlob]/r[iR]*Lagz[iZ,jZ]*LagAr[iR,jR]
