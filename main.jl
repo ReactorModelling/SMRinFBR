@@ -1,3 +1,4 @@
+#=
 workspace()
 include("colloc.jl")
 include("getFrictionFactor.jl")
@@ -14,6 +15,7 @@ include("getHeatCoefficients.jl")
 include("energyEquation.jl")
 include("speciesMassBalance.jl")
 include("getDiffusivity.jl")
+=#
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -30,9 +32,8 @@ Inlet values:
     wN2     = 0.0641
 =# 
 
-using Winston
-hold()
 const global SMALL = 1000eps(Float64)
+#=
 include("constants.jl")
 
 ################################################################################
@@ -53,23 +54,24 @@ const global wIn     = [wCH4in, wCOin, wCO2in, wH2in, wH2Oin, wN2in]
 uz      = uzIn*ones(Nglob)
 p       = pIn*ones(Nglob)
 T       = Tin*ones(Nglob)
-#=
 wCH4    = [wCH4in*ones(Nr); 0.048ones(Nglob - Nr)]
 wCO     = [wCOin*ones(Nr); 0.1479ones(Nglob - Nr)]
 wCO2    = [wCO2in*ones(Nr); 0.1804ones(Nglob - Nr)]
 wH2     = [wH2in*ones(Nr); 0.0643ones(Nglob - Nr)]
 wH2O    = [wH2Oin*ones(Nr); 0.4954ones(Nglob - Nr)]
-=#
 wN2     = wN2in*ones(Nglob)
+=#
+#=
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob) 
 wCO2    = wCO2in*ones(Nglob) 
 wH2     = wH2in*ones(Nglob) 
 wH2O    = wH2Oin*ones(Nglob) 
-
-
+=#
+#=
 w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
 w ./= sum(w,2)
+=#
 x   = getMolarFractions(w)                 # Matrix with all the molar fractions
 M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
 rho = M.*p./(R*T)
@@ -99,7 +101,7 @@ A_w = {zeros(Nglob,Nglob) for i in CompIndex}
 b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
-gamma_w = 1e-2
+gamma_w = 5e-2
 gamma_T = 5e-2
 Gamma_T = 5e-1
 Gamma_w = 5e-1
@@ -140,10 +142,8 @@ while totRes > 1e-2
         iter += 1
     end
 
-    while minimum(T) < 300 || maximum(T) > Ta
-        T = Gamma_T*T + (1 - Gamma_T)*Told
-    end
-
+    T = Gamma_T*T + (1 - Gamma_T)*Told
+    T = max(1.0, T)
     println("T iterations: $iter")
     println("T residual : $res_T")
     println("Min T: $(minimum(T))")
@@ -163,13 +163,13 @@ while totRes > 1e-2
         end
         println("$(Comp[CompIndex[i]]) iterations: $iter")
         println("$(Comp[CompIndex[i]]) residual : $res_w")
-        while minimum(w[:,c]) < 0  || maximum(w[:,c]) > 1
-            w[:,c] = Gamma_w*w[:,c] + (1-Gamma_w)*wOld
-        end
+        w[:,c] = Gamma_w*w[:,c] + (1-Gamma_w)*wOld
+        w[:,c] = max(SMALL, min(1.0, w[:,c]))
     end
-
-    w[:,6] = 1 - sum(w[:,CompIndex],2)
-    println("minW: $(minimum(w))")
+    w ./= sum(w,2)
+    w[:,2] = 1 - sum(w[:,CompIndex],2)
+    w[:,2] = max(SMALL, min(1.0, w[:,2]))
+    w ./= sum(w,2)
 
     x   = getMolarFractions(w)                 # Matrix with all the molar fractions
     M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
@@ -199,7 +199,5 @@ while totRes > 1e-2
     println("w residual $res_w")
     println("Total resisdual: $totRes")
     println("Outer loop iterations: $totIter")
-    semilogy([totIter],[totRes], "x")
-    plot([totIter],[totRes], "x")
     totIter += 1
 end
