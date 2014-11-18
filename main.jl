@@ -97,10 +97,10 @@ A_w = {zeros(Nglob,Nglob) for i in CompIndex}
 b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
-gamma_w = 5e-3
-gamma_T = 5e-3
-Gamma_T = 5e-1
-Gamma_w = 5e-1
+gamma_w = 5e-2
+gamma_T = 5e-2
+Gamma_T = 5e-3
+Gamma_w = 5e-3
 totIter = 1
 maxIter = 100000
 totRes  = 1.0
