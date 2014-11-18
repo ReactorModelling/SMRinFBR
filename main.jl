@@ -1,4 +1,3 @@
-#=
 workspace()
 include("colloc.jl")
 include("getFrictionFactor.jl")
@@ -15,7 +14,6 @@ include("getHeatCoefficients.jl")
 include("energyEquation.jl")
 include("speciesMassBalance.jl")
 include("getDiffusivity.jl")
-=#
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -33,7 +31,6 @@ Inlet values:
 =# 
 
 const global SMALL = 1000eps(Float64)
-#=
 include("constants.jl")
 
 ################################################################################
@@ -60,7 +57,6 @@ wCO2    = [wCO2in*ones(Nr); 0.1804ones(Nglob - Nr)]
 wH2     = [wH2in*ones(Nr); 0.0643ones(Nglob - Nr)]
 wH2O    = [wH2Oin*ones(Nr); 0.4954ones(Nglob - Nr)]
 wN2     = wN2in*ones(Nglob)
-=#
 #=
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob) 
@@ -68,10 +64,9 @@ wCO2    = wCO2in*ones(Nglob)
 wH2     = wH2in*ones(Nglob) 
 wH2O    = wH2Oin*ones(Nglob) 
 =#
-#=
+
 w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
 w ./= sum(w,2)
-=#
 x   = getMolarFractions(w)                 # Matrix with all the molar fractions
 M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
 rho = M.*p./(R*T)
@@ -103,8 +98,8 @@ speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
 gamma_w = 5e-2
 gamma_T = 5e-2
-Gamma_T = 5e-1
-Gamma_w = 5e-1
+Gamma_T = 5e-3
+Gamma_w = 5e-3
 totIter = 1
 maxIter = 100000
 totRes  = 1.0
