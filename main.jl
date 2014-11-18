@@ -1,4 +1,3 @@
-#=
 workspace()
 include("colloc.jl")
 include("getFrictionFactor.jl")
@@ -15,7 +14,6 @@ include("getHeatCoefficients.jl")
 include("energyEquation.jl")
 include("speciesMassBalance.jl")
 include("getDiffusivity.jl")
-=#
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -33,7 +31,6 @@ Inlet values:
 =# 
 
 const global SMALL = 1000eps(Float64)
-#=
 include("constants.jl")
 
 ################################################################################
@@ -54,24 +51,23 @@ const global wIn     = [wCH4in, wCOin, wCO2in, wH2in, wH2Oin, wN2in]
 uz      = uzIn*ones(Nglob)
 p       = pIn*ones(Nglob)
 T       = Tin*ones(Nglob)
+#=
 wCH4    = [wCH4in*ones(Nr); 0.048ones(Nglob - Nr)]
 wCO     = [wCOin*ones(Nr); 0.1479ones(Nglob - Nr)]
 wCO2    = [wCO2in*ones(Nr); 0.1804ones(Nglob - Nr)]
 wH2     = [wH2in*ones(Nr); 0.0643ones(Nglob - Nr)]
 wH2O    = [wH2Oin*ones(Nr); 0.4954ones(Nglob - Nr)]
-wN2     = wN2in*ones(Nglob)
 =#
-#=
+
+wN2     = wN2in*ones(Nglob)
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob) 
 wCO2    = wCO2in*ones(Nglob) 
 wH2     = wH2in*ones(Nglob) 
 wH2O    = wH2Oin*ones(Nglob) 
-=#
-#=
+
 w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
 w ./= sum(w,2)
-=#
 x   = getMolarFractions(w)                 # Matrix with all the molar fractions
 M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
 rho = M.*p./(R*T)
@@ -101,8 +97,8 @@ A_w = {zeros(Nglob,Nglob) for i in CompIndex}
 b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
-gamma_w = 5e-2
-gamma_T = 5e-2
+gamma_w = 5e-3
+gamma_T = 5e-3
 Gamma_T = 5e-1
 Gamma_w = 5e-1
 totIter = 1
@@ -131,9 +127,10 @@ while totRes > 1e-2
     end
     println("uz iterations: $iter")
     println("uz residual : $res_uz")
-
+    
     Told = copy(T)
     res_T = norm(A_T*T - b_T)/mean(T)
+    
     iter = 1
     while res_T > 1e-6 && iter < maxIter
         T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
