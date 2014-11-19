@@ -5,10 +5,12 @@ function speciesMassBalance(w, rho, uz, reaction, D, A, b)
 end
 
 function speciesMassBalance(w, rho, uz, reaction, D, A, b, i)
+    c = CompIndex[i]
     dRhodz = kron(LagAz, Lagr)*rho
     duzdz  = kron(LagAz, Lagr)*uz
     dRhodr = kron(LagAr, Lagz)*rho
-    c = CompIndex[i]
+    dwdr   = kron(LagAr, Lagz)*w[:,c]
+    dw2dr2 = kron(LagBr, Lagz)*w[:,c]
     A_w = A[i]
     A_w[1:Nr,1:Nr] = eye(Nr)
     for iZ = 2:Nz
@@ -20,17 +22,18 @@ function speciesMassBalance(w, rho, uz, reaction, D, A, b, i)
                     if iR == 1 || iR == Nr
                         A_w[iGlob,jGlob] = Lagz[iZ,jZ]*LagAr[iR,jR]
                     else
-                        A_w[iGlob,jGlob] = 
+                        A_w[iGlob,jGlob] = (
                         (
                             rho[iGlob]*uz[iGlob]*LagAz[iZ,jZ]*Lagr[iR,jR]
                           + dRhodz[iGlob]*uz[iGlob]*Lagz[iZ,jZ]*Lagr[iR,jR]
                           + duzdz[iGlob]*rho[iGlob]*Lagz[iZ,jZ]*Lagr[iR,jR]
-                        )
-                        - D*
+                        ) -
+                        D[iGlob]*
                         (
                             rho[iGlob]/r[iR]*Lagz[iZ,jZ]*LagAr[iR,jR]
                           + dRhodr[iGlob]*Lagz[iZ,jZ]*LagAr[iR,jR]
                           + rho[iGlob]*Lagz[iZ,jZ]*LagBr[iR,jR]
+                        )
                         )
                     end
                 end

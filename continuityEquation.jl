@@ -7,12 +7,12 @@ function continuityEquation(uz, rho, A)
             for jZ = 1:Nz
                 for jR = 1:Nr
                     jGlob = jR + (jZ-1)*(Nr)
-                    if iR == 1 || iR == Nr
-                        A[iGlob,jGlob] = Lagz[iZ,jZ]*LagAr[iR,jR]
-                    else
+                    #if iR == 1 || iR == Nr
+                    #    A[iGlob,jGlob] = Lagz[iZ,jZ]*LagAr[iR,jR]
+                    #else
                         A[iGlob,jGlob] = rho[iGlob]*LagAz[iZ,jZ]*Lagr[iR,jR] +
                                          dRhodz[iGlob]*Lagz[iZ,iR]*Lagr[iR,jR]
-                    end
+                    #end
                 end
             end
         end

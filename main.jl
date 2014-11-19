@@ -98,16 +98,17 @@ speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
 gamma_w = 1e-0
 gamma_T = 1e-1
-Gamma_T = 5e-2
+Gamma_T = 1e-3
 Gamma_w = 5e-4
+Gamma_uz = 1e-1
 totIter = 1
-maxIter = 1000
+maxIter = 20000
 totRes  = 1.0
 while totRes > 1e-2
 
     res_p = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
     iter = 1
-    while res_p > 1e-6 && iter < maxIter
+    while res_p > 1e-7 && iter < maxIter
         p = kron(A_p\b_p, ones(Nr))
         ergunEquation(p, rho, uz, f, b_p)
         res_p = norm(A_p*p[1:Nr:end]-b_p)/abs(mean(p))
@@ -115,10 +116,10 @@ while totRes > 1e-2
     end
     println("p iterations: $iter")
     println("p residual : $res_p")
-
+    uzOld = copy(uz)
     res_uz = norm(A_uz*uz - b_uz)/mean(uz)
     iter = 1
-    while res_uz > 1e-6 && iter < maxIter
+    while res_uz > 1e-7 && iter < maxIter
         uz = A_uz\b_uz
         continuityEquation(uz, rho, A_uz)
         res_uz = norm(A_uz*uz - b_uz)/abs(mean(uz))
@@ -126,11 +127,11 @@ while totRes > 1e-2
     end
     println("uz iterations: $iter")
     println("uz residual : $res_uz")
-    
+    uz = Gamma_uz*uz + (1-Gamma_uz)*uzOld
     Told = copy(T)
     res_T = norm(A_T*T - b_T)/mean(T)  
     iter = 1
-    while res_T > 1e-6 && iter < maxIter
+    while res_T > 1e-7 && iter < maxIter
         T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
         energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
         res_T = norm(A_T*T - b_T)/abs(mean(T))
@@ -149,20 +150,23 @@ while totRes > 1e-2
         res_w = norm(A_w[i]*w[:,c] - b_w[i])
         #wOld = copy(w[:,c])
         iter = 1
-        while res_w > 1e-5 && iter < maxIter
+        while res_w > 1e-7 && iter < maxIter
             w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]
             speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w, i)
-            res_w = norm(A_w[i]*w[:,c] - b_w[i])
+            res_w = norm(A_w[i]*w[:,c] - b_w[i])/abs(mean(w[:,c]))
             iter += 1
         end
         println("$(Comp[c]) residual: $res_w")
         println("$(Comp[c]) iterations: $iter")
     end
-    w[:,6] = 1 - sum(w[:,CompIndex],2)
+    w[:,2] = 1 - sum(w[:,CompIndex],2)
     w = Gamma_w*w + (1-Gamma_w)*wOld
+    w = max(SMALL, w)
     println("Min w: $(minimum(w))")
     println("Max w: $(maximum(w))")
 
+    x   = getMolarFractions(w)                 # Matrix with all the molar fractions
+    M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
     rho = M.*p./(R*T)
     mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
     Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
@@ -180,7 +184,7 @@ while totRes > 1e-2
     res_p   = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
     res_uz  = norm(A_uz*uz - b_uz)/mean(uz)
     res_T   = norm(A_T*T - b_T)/mean(T)
-    res_w   = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i]) for i in 1:length(CompIndex)])
+    res_w   = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])/abs(mean(w[:,CompIndex[i]])) for i in 1:length(CompIndex)])
     totRes  = res_p + res_uz + res_T + res_w
     println("p residual: $res_p")
     println("uz residual $res_uz")

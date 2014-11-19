@@ -4,7 +4,7 @@
 const global Nz      = 20   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
 const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"]
-const global CompIndex = [2, 5, 3, 4, 1]
+const global CompIndex = [6, 5, 3, 4, 1]
 const global Nr      = 5    # Number of radial discretization points
 const global Nglob   = Nz*Nr
 const global Length  = 7    # [m]
