@@ -99,11 +99,11 @@ speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 gamma_w = 1e-0
 gamma_T = 1e-1
 Gamma_T = 5e-2
-Gamma_w = 5e-3
+Gamma_w = 5e-4
 totIter = 1
 maxIter = 1000
 totRes  = 1.0
-while totRes > 1e-5
+while totRes > 1e-2
 
     res_p = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
     iter = 1
@@ -151,16 +151,17 @@ while totRes > 1e-5
         iter = 1
         while res_w > 1e-5 && iter < maxIter
             w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]
-            speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
+            speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w, i)
             res_w = norm(A_w[i]*w[:,c] - b_w[i])
-            println("$(Comp[c]) residual: $res_w")
-            println("$(Comp[c]) iterations: $iter")
             iter += 1
         end
+        println("$(Comp[c]) residual: $res_w")
+        println("$(Comp[c]) iterations: $iter")
     end
-    w[:,2] = 1 - sum(w[:,CompIndex],2)
-
+    w[:,6] = 1 - sum(w[:,CompIndex],2)
     w = Gamma_w*w + (1-Gamma_w)*wOld
+    println("Min w: $(minimum(w))")
+    println("Max w: $(maximum(w))")
 
     rho = M.*p./(R*T)
     mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
