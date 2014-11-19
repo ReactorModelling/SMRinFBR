@@ -6,11 +6,11 @@ end
 
 function speciesMassBalance(w, rho, uz, reaction, D, A, b, i)
     c = CompIndex[i]
-    dRhodz = kron(LagAz, Lagr)*rho
-    duzdz  = kron(LagAz, Lagr)*uz
-    dRhodr = kron(LagAr, Lagz)*rho
-    dwdr   = kron(LagAr, Lagz)*w[:,c]
-    dw2dr2 = kron(LagBr, Lagz)*w[:,c]
+    dRhodz = getAxialDerivative(rho)
+    duzdz  = getAxialDerivative(uz)
+    dRhodr = getRadialDerivative(rho)
+    dwdr   = getRadialDerivative(w[:,c])
+    dw2dr2 = getRadialSecondDerivative(w[:,c])
     A_w = A[i]
     A_w[1:Nr,1:Nr] = eye(Nr)
     for iZ = 2:Nz

@@ -14,6 +14,7 @@ include("getHeatCoefficients.jl")
 include("energyEquation.jl")
 include("speciesMassBalance.jl")
 include("getDiffusivity.jl")
+include("getDerivative.jl")
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -57,6 +58,7 @@ wCO     = [wCOin*ones(Nr); 0.1479ones(Nglob - Nr)]
 wCO2    = [wCO2in*ones(Nr); 0.1804ones(Nglob - Nr)]
 wH2     = [wH2in*ones(Nr); 0.0643ones(Nglob - Nr)]
 wH2O    = [wH2Oin*ones(Nr); 0.4954ones(Nglob - Nr)]
+wN2     = wN2in*ones(Nglob)
 =#
 wN2     = wN2in*ones(Nglob)
 wCH4    = wCH4in*ones(Nglob)
@@ -66,7 +68,7 @@ wH2     = wH2in*ones(Nglob)
 wH2O    = wH2Oin*ones(Nglob) 
 
 w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
-w ./= sum(w,2)
+
 x   = getMolarFractions(w)                 # Matrix with all the molar fractions
 M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
 rho = M.*p./(R*T)
@@ -96,86 +98,83 @@ A_w = {zeros(Nglob,Nglob) for i in CompIndex}
 b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
-gamma_w = 1e-0
-gamma_T = 1e-1
-Gamma_T = 1e-3
-Gamma_w = 5e-4
-Gamma_uz = 1e-1
-totIter = 1
-maxIter = 20000
-totRes  = 1.0
-while totRes > 1e-2
+gamma_w     = 1e-1
+gamma_T     = 1e-1
+gamma_rho   = 1e-2
+gamma_uz    = 1e-0
 
-    res_p = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
-    iter = 1
-    while res_p > 1e-7 && iter < maxIter
+totIter = 1
+maxIter = 5000
+totRes  = 1.0
+
+while totRes > 1e-4
+    
+
+    res_T = norm(A_T*T - b_T)/mean(T)
+    res_w = [
+                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(w[:,CompIndex]))
+                for i in 1:length(CompIndex)
+            ]
+    iter = 0
+    while (res_T > 1e-3 || sum(res_w)/length(res_w) > 1e-4) && iter < maxIter
+        T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
+        for i = 1:length(CompIndex)
+            c = CompIndex[i]
+            res_w = norm(A_w[i]*w[:,c] - b_w[i])
+            w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]
+        end
+        w[:,2] = 1 - sum(w[:,CompIndex],2)
+
+        x   = getMolarFractions(w)             # Matrix with all the molar fractions
+        M   = getAvgMolarMass(x)                  # Average molar mass [kg mol^{-1}]                               # Friction factor
+        cp  = getHeatCapacity(T,x)                # Heat capacity [J K^{-1} kg^{-1}]
+        dH, reaction = getReaction(T,x,p)  # Enthalpy of reaction and reaction rates
+                                       # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
+        energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
+        speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
+
+        res_T   = norm(A_T*T - b_T)/mean(T)
+        res_w   = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])/abs(mean(w[:,CompIndex[i]])) for i in 1:length(CompIndex)])
+        iter   += 1
+    end
+    println("T-w iterations: $iter")
+    println("T residual : $res_T")
+    println("w residual : $(maximum(res_w))")
+    println("Min T: $(minimum(T))")
+    println("Min w: $(minimum(w))")
+
+    res_p   = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
+    res_uz  = norm(A_uz*uz - b_uz)/mean(uz)
+    iter = 0
+    while (res_p > 1e-7 || res_uz > 1e-7) && iter < maxIter
         p = kron(A_p\b_p, ones(Nr))
+        uz = gamma_uz*(A_uz\b_uz) + (1-gamma_uz)*uz
+        Re  = getReynolds(rho, uz, mu)                         # Reynolds number
+        f   = getFrictionFactor(Re)                            # Friction factor
         ergunEquation(p, rho, uz, f, b_p)
+        continuityEquation(uz, rho, A_uz)
+        res_uz = norm(A_uz*uz - b_uz)/abs(mean(uz))
         res_p = norm(A_p*p[1:Nr:end]-b_p)/abs(mean(p))
         iter += 1
     end
-    println("p iterations: $iter")
+    println("p-uz iterations: $iter")
     println("p residual : $res_p")
-    uzOld = copy(uz)
-    res_uz = norm(A_uz*uz - b_uz)/mean(uz)
-    iter = 1
-    while res_uz > 1e-7 && iter < maxIter
-        uz = A_uz\b_uz
-        continuityEquation(uz, rho, A_uz)
-        res_uz = norm(A_uz*uz - b_uz)/abs(mean(uz))
-        iter += 1
-    end
-    println("uz iterations: $iter")
     println("uz residual : $res_uz")
-    uz = Gamma_uz*uz + (1-Gamma_uz)*uzOld
-    Told = copy(T)
-    res_T = norm(A_T*T - b_T)/mean(T)  
-    iter = 1
-    while res_T > 1e-7 && iter < maxIter
-        T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
-        energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
-        res_T = norm(A_T*T - b_T)/abs(mean(T))
-        iter += 1
-    end
-    T = Gamma_T*T + (1 - Gamma_T)*Told
-    #T = max(1.0, T)
-    println("T iterations: $iter")
-    println("T residual : $res_T")
-    println("Min T: $(minimum(T))")
+    println("Min uz: $(minimum(uz))")
 
-    wOld = copy(w)
-    #res_w = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i]) for i in 1:length(CompIndex)])
-    for i = 1:length(CompIndex)
-        c = CompIndex[i]
-        res_w = norm(A_w[i]*w[:,c] - b_w[i])
-        #wOld = copy(w[:,c])
-        iter = 1
-        while res_w > 1e-7 && iter < maxIter
-            w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]
-            speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w, i)
-            res_w = norm(A_w[i]*w[:,c] - b_w[i])/abs(mean(w[:,c]))
-            iter += 1
-        end
-        println("$(Comp[c]) residual: $res_w")
-        println("$(Comp[c]) iterations: $iter")
-    end
-    w[:,2] = 1 - sum(w[:,CompIndex],2)
-    w = Gamma_w*w + (1-Gamma_w)*wOld
-    w = max(SMALL, w)
-    println("Min w: $(minimum(w))")
-    println("Max w: $(maximum(w))")
 
     x   = getMolarFractions(w)                 # Matrix with all the molar fractions
     M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
-    rho = M.*p./(R*T)
+    rho = gamma_rho*M.*p./(R*T) + (1-gamma_rho)*rho
     mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
     Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
     f   = getFrictionFactor(Re)                                    # Friction factor
     cp  = getHeatCapacity(T,x)                    # Heat capacity [J K^{-1} kg^{-1}]
     dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
-                                           # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
+                                       # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
     lambdaEff, U = getHeatCoefficients(Re, T, x, mu, cp, M)
 
+    D = getDiffusivity(uz)
     ergunEquation(p, rho, uz, f, b_p)
     continuityEquation(uz, rho, A_uz)
     energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
@@ -184,13 +183,13 @@ while totRes > 1e-2
     res_p   = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
     res_uz  = norm(A_uz*uz - b_uz)/mean(uz)
     res_T   = norm(A_T*T - b_T)/mean(T)
-    res_w   = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])/abs(mean(w[:,CompIndex[i]])) for i in 1:length(CompIndex)])
-    totRes  = res_p + res_uz + res_T + res_w
-    println("p residual: $res_p")
-    println("uz residual $res_uz")
-    println("T residual $res_T")
-    println("w residual $res_w")
-    println("Total resisdual: $totRes")
+    res_w   = [
+                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(w[:,CompIndex]))
+                for i in 1:length(CompIndex)
+              ]
+    totRes  = res_p + res_uz + res_T + sum(res_w)
+    println("Total residual: $totRes")
     println("Outer loop iterations: $totIter")
     totIter += 1
 end
+
