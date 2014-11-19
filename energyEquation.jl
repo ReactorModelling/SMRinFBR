@@ -28,7 +28,7 @@ function energyEquation(T, rho, uz, cp, dH, U, lambdaEff, A, b)
         for iR = 1:Nr
             iGlob = iR + (iZ - 1)*Nr
             if iR == 1
-                b[iGlob] = 0
+                continue
             elseif iR == Nr
                 b[iGlob] = -U[iZ]*(T[iGlob] - Ta)
             else

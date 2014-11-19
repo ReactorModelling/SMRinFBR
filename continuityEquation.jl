@@ -1,4 +1,5 @@
 function continuityEquation(uz, rho, A)
+    dRhodz = kron(LagAz,Lagr)*rho
     A[1:Nr,1:Nr] = eye(Nr)
     for iZ = 2:Nz
         for iR = 1:Nr
@@ -10,7 +11,7 @@ function continuityEquation(uz, rho, A)
                         A[iGlob,jGlob] = Lagz[iZ,jZ]*LagAr[iR,jR]
                     else
                         A[iGlob,jGlob] = rho[iGlob]*LagAz[iZ,jZ]*Lagr[iR,jR] +
-                                         rho[jGlob]*LagAz[iZ,jZ]*Lagr[iR,jR]
+                                         dRhodz[iGlob]*Lagz[iZ,iR]*Lagr[iR,jR]
                     end
                 end
             end

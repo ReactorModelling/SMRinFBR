@@ -58,7 +58,6 @@ wCO2    = [wCO2in*ones(Nr); 0.1804ones(Nglob - Nr)]
 wH2     = [wH2in*ones(Nr); 0.0643ones(Nglob - Nr)]
 wH2O    = [wH2Oin*ones(Nr); 0.4954ones(Nglob - Nr)]
 =#
-
 wN2     = wN2in*ones(Nglob)
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob) 
@@ -97,14 +96,14 @@ A_w = {zeros(Nglob,Nglob) for i in CompIndex}
 b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
 
-gamma_w = 5e-2
-gamma_T = 5e-2
-Gamma_T = 5e-3
+gamma_w = 1e-0
+gamma_T = 1e-1
+Gamma_T = 5e-2
 Gamma_w = 5e-3
 totIter = 1
-maxIter = 100000
+maxIter = 1000
 totRes  = 1.0
-while totRes > 1e-2
+while totRes > 1e-5
 
     res_p = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
     iter = 1
@@ -129,8 +128,7 @@ while totRes > 1e-2
     println("uz residual : $res_uz")
     
     Told = copy(T)
-    res_T = norm(A_T*T - b_T)/mean(T)
-    
+    res_T = norm(A_T*T - b_T)/mean(T)  
     iter = 1
     while res_T > 1e-6 && iter < maxIter
         T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
@@ -138,38 +136,32 @@ while totRes > 1e-2
         res_T = norm(A_T*T - b_T)/abs(mean(T))
         iter += 1
     end
-
     T = Gamma_T*T + (1 - Gamma_T)*Told
-    T = max(1.0, T)
+    #T = max(1.0, T)
     println("T iterations: $iter")
     println("T residual : $res_T")
     println("Min T: $(minimum(T))")
 
-    
-
+    wOld = copy(w)
+    #res_w = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i]) for i in 1:length(CompIndex)])
     for i = 1:length(CompIndex)
         c = CompIndex[i]
-        wOld = copy(w[:,c])
         res_w = norm(A_w[i]*w[:,c] - b_w[i])
+        #wOld = copy(w[:,c])
         iter = 1
-        while res_w > 1e-6 && iter < maxIter
-            w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1 - gamma_w)*w[:,c]
+        while res_w > 1e-5 && iter < maxIter
+            w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]
             speciesMassBalance(w, rho, uz, reaction, D, A_w, b_w)
-            res_w = norm(A_w[i]*w[:,c] - b_w[i])/abs(mean(w[:,c]))
+            res_w = norm(A_w[i]*w[:,c] - b_w[i])
+            println("$(Comp[c]) residual: $res_w")
+            println("$(Comp[c]) iterations: $iter")
             iter += 1
         end
-        println("$(Comp[CompIndex[i]]) iterations: $iter")
-        println("$(Comp[CompIndex[i]]) residual : $res_w")
-        w[:,c] = Gamma_w*w[:,c] + (1-Gamma_w)*wOld
-        w[:,c] = max(SMALL, min(1.0, w[:,c]))
     end
-    w ./= sum(w,2)
     w[:,2] = 1 - sum(w[:,CompIndex],2)
-    w[:,2] = max(SMALL, min(1.0, w[:,2]))
-    w ./= sum(w,2)
 
-    x   = getMolarFractions(w)                 # Matrix with all the molar fractions
-    M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
+    w = Gamma_w*w + (1-Gamma_w)*wOld
+
     rho = M.*p./(R*T)
     mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
     Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
@@ -178,7 +170,6 @@ while totRes > 1e-2
     dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
                                            # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
     lambdaEff, U = getHeatCoefficients(Re, T, x, mu, cp, M)
-    D = getDiffusivity(uz)
 
     ergunEquation(p, rho, uz, f, b_p)
     continuityEquation(uz, rho, A_uz)

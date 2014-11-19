@@ -1,4 +1,7 @@
 function speciesMassBalance(w, rho, uz, reaction, D, A, b)
+    dRhodz = kron(LagAz, Lagr)*rho
+    duzdz  = kron(LagAz, Lagr)*uz
+    dRhodr = kron(LagAr, Lagz)*rho
     for i in 1:length(A)
         c = CompIndex[i]
         A_w = A[i]
@@ -14,15 +17,15 @@ function speciesMassBalance(w, rho, uz, reaction, D, A, b)
                         else
                             A_w[iGlob,jGlob] = 
                             (
-                                rho[iGlob]*uz[iGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
-                              + uz[iGlob]*rho[jGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
-                              + rho[iGlob]*uz[jGlob]*Lagr[iR,jR]*LagAz[iZ,jZ]
-                              - D[iGlob]
-                              * (
-                                    rho[iGlob]/r[iR]*Lagz[iZ,jZ]*LagAr[iR,jR]
-                                  + rho[iGlob]*Lagz[iZ,jZ]*LagBr[iR,jR]
-                                  + LagAr[iR,jR]*rho[jGlob]*Lagz[iZ,jZ]*LagAr[iR,jR]
-                                )
+                                rho[iGlob]*uz[iGlob]*LagAz[iZ,jZ]*Lagr[iR,jR]
+                              + dRhodz[iGlob]*uz[iGlob]*Lagz[iZ,jZ]*Lagr[iR,jR]
+                              + duzdz[iGlob]*rho[iGlob]*Lagz[iZ,jZ]*Lagr[iR,jR]
+                            )
+                            - D*
+                            (
+                                rho[iGlob]/r[iR]*Lagz[iZ,jZ]*LagAr[iR,jR]
+                              + dRhodr[iGlob]*Lagz[iZ,jZ]*LagAr[iR,jR]
+                              + rho[iGlob]*Lagz[iZ,jZ]*LagBr[iR,jR]
                             )
                         end
                     end
