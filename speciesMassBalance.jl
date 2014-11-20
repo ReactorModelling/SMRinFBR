@@ -1,10 +1,10 @@
-function speciesMassBalance(w, rho, uz, reaction, D, A, b)
+function speciesMassBalance!(w, rho, uz, reaction, D, A, b)
     for i in 1:length(A)
-        speciesMassBalance(w, rho, uz, reaction, D, A, b, i)
+        speciesMassBalance!(w, rho, uz, reaction, D, A, b, i)
     end
 end
 
-function speciesMassBalance(w, rho, uz, reaction, D, A, b, i)
+function speciesMassBalance!(w, rho, uz, reaction, D, A, b, i)
     c = CompIndex[i]
     dRhodz = getAxialDerivative(rho)
     duzdz  = getAxialDerivative(uz)

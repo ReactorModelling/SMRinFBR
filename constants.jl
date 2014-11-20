@@ -1,7 +1,7 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 20   # Number of collocation points in z direction
+const global Nz      = 10   # Number of collocation points in z direction
 const global Ncomp   = 6    # Number of chemical components
 const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"]
 const global CompIndex = [6, 5, 3, 4, 1]
@@ -9,7 +9,7 @@ const global Nr      = 10    # Number of radial discretization points
 const global Nglob   = Nz*Nr
 const global Length  = 7    # [m]
 const global Radius  = 0.102/2 # [m]
-dummyZ,dummyA,dummyB,dummyQ        = colloc(Nz-2,1,1) # Collocation points and matrices
+dummyZ,dummyA,dummyB,dummyQ = colloc(Nz-2,1,1) # Collocation points and matrices
 const global Z = Length*dummyZ
 const global LagAz = 1/Length*dummyA
 const global LagBz = 1/Length^2*dummyB
