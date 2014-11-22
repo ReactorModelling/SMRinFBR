@@ -11,6 +11,6 @@ function getDiffusivity(velocity)
 =#
     
     peNumberrd  = 8*(2-(1-2*dParticle/dInner)^2); 	# Peclet number rd
-    peNumbermr  = 1.1*peNumberrd; 				    # Peclet number mr
+    peNumbermr  = 1.1*peNumberrd; 				          # Peclet number mr
     diffusivity = velocity*dParticle/peNumbermr;
 end
