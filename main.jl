@@ -101,8 +101,8 @@ b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
 # Under-relaxation factors
-const gamma_w     = 1e-1                                        # Mass fractions
-const gamma_T     = 1e-1                                           # Temperature
+const gamma_w     = 5e-2                                        # Mass fractions
+const gamma_T     = 5e-2                                           # Temperature
 const gamma_uz    = 1e-0                                              # Velocity
 const gamma_p     = 1e-0                                              # Pressure
 
@@ -110,7 +110,7 @@ const maxIter   = 500                            # Max iterations in the loops
 totIter         = 1                                           # Total iterations
 totRes          = 1.0                           # Initialize the total residual
 
-while totRes > 1e-6
+while totRes > 1e-1
     ############################################################################
     #                           T-w iteration loop                             #
     ############################################################################
@@ -122,7 +122,7 @@ while totRes > 1e-6
                 for i in 1:length(CompIndex)
             ]                  # A vector with the 2-norms of the residuals in w
     iter = 0                                      # Initialize iteration numbers
-    while (res_T > 1e-7 || maximum(res_w) > 1e-6) && iter < maxIter
+    while (res_T > 1e-2 || maximum(res_w) > 1e-6) && iter < maxIter
         # Solve for T and apply under-relaxation
         T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
 
