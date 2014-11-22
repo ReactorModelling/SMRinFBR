@@ -103,7 +103,7 @@ b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
 # Initialize total A (sparse)
-A = spzeros(10Nglob,10Nglob)
+A = zeros(10Nglob,10Nglob)
 # Initialize total B
 B = zeros(10Nglob,1)
 # Fill A and B (by reference)
@@ -115,14 +115,14 @@ couple!(w, T, uz, rho, p,
 variables = [wVec, T, uz, rho, p]
 
 # Under-relaxation factor
-const gamma_w     = 8e-2                                       #  Mass fractions
-const gamma_T     = 8e-2                                           # Temperature
+const gamma_w     = 5e-2                                       #  Mass fractions
+const gamma_T     = 5e-2                                           # Temperature
 
 const maxIter   = 1000                             # Max iterations in the loops
 totIter         = 1                                           # Total iterations
 totRes          = 1.0                           #  Initialize the total residual
 
-while totRes > 2e-4
+while totRes > 1e-1
     # Solve for all the variables
     variables = A\B
     # Extract the variables
