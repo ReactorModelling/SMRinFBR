@@ -7,7 +7,7 @@ function getHeatCoefficients(Re,T,Y,gasViscosity,cpGas,avgMolarMass)
  Re        [=] -               Reynolds number
  T         [=] K               Temperature
  Y         [=] -               Mol fraction
- gasVis 	[=]	  				Gas viscosity
+ gasVis    [=]	  			   Gas viscosity
  CPgas     [=] J/kgK           Gas heat capasity
 
  Output
