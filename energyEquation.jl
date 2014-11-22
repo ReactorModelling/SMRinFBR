@@ -2,9 +2,19 @@ function energyEquation!(T, rho, uz, cp, dH, U, lambdaEff, A, b)
     # Update A and b for all temperatures
     # The update is done by reference
     A[1:Nr,1:Nr] = eye(Nr)
+    b[1:Nr] = ones(Nr)*Tin
     for iZ = 2:Nz
         for iR = 1:Nr
             iGlob = iR + (iZ-1)*(Nr)
+            if iR == 1
+                continue
+            elseif iR == Nr
+                # Insert heat transfer through wall
+                b[iGlob] = -U[iZ]*(T[iGlob] - Ta)
+            else
+                # Insert heat of reaction
+                b[iGlob] = -dH[iGlob]
+            end
             for jZ = 1:Nz
                 for jR = 1:Nr
                     jGlob = jR + (jZ-1)*(Nr) # Global index j (position)
@@ -28,22 +38,6 @@ function energyEquation!(T, rho, uz, cp, dH, U, lambdaEff, A, b)
 
                     end
                 end
-            end
-        end
-    end
-    b[1:Nr] = ones(Nr)*Tin
-    for iZ = 2:Nz
-        for iR = 1:Nr
-            iGlob = iR + (iZ - 1)*Nr
-            if iR == 1
-                continue
-            elseif iR == Nr
-                # Insert heat transfer through wall
-                b[iGlob] = -U[iZ]*(T[iGlob] - Ta)
-
-            else
-                # Insert heat of reaction
-                b[iGlob] = -dH[iGlob]
             end
         end
     end
