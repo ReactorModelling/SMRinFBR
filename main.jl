@@ -107,12 +107,18 @@ speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
 A_uzRhoP = zeros(3Nglob,3Nglob)
 b_uzRhoP = zeros(3Nglob)
-coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
+coupleVelocityDensityPressure!(uz, rho, p,
+                               M, T, f, 
+                               A_uz, b_uz, A_p, b_p, 
+                               A_uzRhoP, b_uzRhoP)
 uzRhoP = [uz, rho, p]
 
 A_wT = zeros(7Nglob,7Nglob)
 b_wT = zeros(7Nglob)
-coupleMassTemperature!(w, T,rho, uz, cp, dH, U, lambdaEff, reaction, D,A_w, b_w, A_T, b_T,A_wT, b_wT)
+coupleMassTemperature!(w, T, 
+                       rho, uz, cp, dH, U, lambdaEff, reaction, D,
+                       A_w, b_w, A_T, b_T,
+                       A_wT, b_wT)
 wT = [wVec, T]
 
 # Under-relaxation factor
@@ -120,7 +126,7 @@ const gamma_wT     = 5e-2                       # Mass fractions and temperature
 
 const maxIter   = 1000                             # Max iterations in the loops
 totIter         = 1                                           # Total iterations
-totRes          = 1.0                           # Initialize the total residual
+totRes          = 1.0                            # Initialize the total residual
 
 while totRes > 1e-2
     ############################################################################
@@ -145,7 +151,10 @@ while totRes > 1e-2
                                        # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
 
         # Update the matrices and vectors
-        coupleMassTemperature!(w, T,rho, uz, cp, dH, U, lambdaEff, reaction, D,A_w, b_w, A_T, b_T,A_wT, b_wT)
+        coupleMassTemperature!(w, T,
+                               rho, uz, cp, dH, U, lambdaEff, reaction, D,
+                               A_w, b_w, A_T, b_T,
+                               A_wT, b_wT)
 
         # Update the residual
         res_wT = norm(A_wT*wT - b_wT)
@@ -158,17 +167,20 @@ while totRes > 1e-2
     println("Min T: $(minimum(T))")
     println("Min w: $(minimum(w))")
 
-    M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
-    mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
-    Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
-    f   = getFrictionFactor(Re)                                    # Friction factor
+    M   = getAvgMolarMass(x)                  # Average molar mass [kg mol^{-1}]
+    mu  = getViscosity(T,x)                                   # Viscosity [Pa s]
+    Re  = getReynolds(rho, uz, mu)                             # Reynolds number
+    f   = getFrictionFactor(Re)                                # Friction factor
 
 
     ############################################################################
     #                           uz-rho-p iteration loop                        #
     ############################################################################
     
-    coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
+    coupleVelocityDensityPressure!(uz, rho, p, 
+                                   M, T, f, 
+                                   A_uz, b_uz, A_p, b_p, 
+                                   A_uzRhoP, b_uzRhoP)
 
     res_uzRhoP = norm(A_uzRhoP*uzRhoP - b_uzRhoP)
     iter = 0
@@ -182,11 +194,14 @@ while totRes > 1e-2
         p = uzRhoP[2Nglob+1:end]
 
         # Update dependent variables
-        Re  = getReynolds(rho, uz, mu)                             # Reynolds number
-        f   = getFrictionFactor(Re)                                # Friction factor
+        Re  = getReynolds(rho, uz, mu)                         # Reynolds number
+        f   = getFrictionFactor(Re)                            # Friction factor
 
         # Update vectors and matrices
-        coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
+        coupleVelocityDensityPressure!(uz, rho, p, 
+                                       M, T, f, 
+                                       A_uz, b_uz, A_p, b_p, 
+                                       A_uzRhoP, b_uzRhoP)
         # Update the residuals
         res_uzRhoP = norm(A_uzRhoP*uzRhoP - b_uzRhoP)
         # Update iterations
@@ -201,8 +216,14 @@ while totRes > 1e-2
     D            = getDiffusivity(uz)
 
     # Update the matrices and vectors
-    coupleMassTemperature!(w, T,rho, uz, cp, dH, U, lambdaEff, reaction, D,A_w, b_w, A_T, b_T,A_wT, b_wT)
-    coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
+    coupleMassTemperature!(w, T,
+                           rho, uz, cp, dH, U, lambdaEff, reaction, D,
+                           A_w, b_w, A_T, b_T,
+                           A_wT, b_wT)
+    coupleVelocityDensityPressure!(uz, rho, p, 
+                                   M, T, f, 
+                                   A_uz, b_uz, A_p, b_p, 
+                                   A_uzRhoP, b_uzRhoP)
 
     # Update the residuals
     res_uzRhoP  = norm(A_uzRhoP*uzRhoP - b_uzRhoP)
