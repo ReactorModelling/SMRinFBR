@@ -15,6 +15,9 @@ include("energyEquation.jl")
 include("speciesMassBalance.jl")
 include("getDiffusivity.jl")
 include("getDerivative.jl")
+#include("coupleVelocityDensity.jl")
+include("coupleMassTemperature.jl")
+include("coupleVelocityDensityPressure.jl")
 #=
 Main script for simulating the steam methane reforming in a fixed bed reactor
 using the method of orthogonal collocation.
@@ -58,7 +61,8 @@ wCO2    = wCO2in*ones(Nglob)
 wH2     = wH2in*ones(Nglob) 
 wH2O    = wH2Oin*ones(Nglob) 
 
-w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
+w    = [wCH4 wCO wCO2 wH2 wH2O wN2]         # Matrix with all the mass fractions
+wVec = vec(w[:,[CompIndex,2]])
 
 x   = getMolarFractions(w)                 # Matrix with all the molar fractions
 M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
@@ -100,38 +104,39 @@ b_w = {zeros(Nglob) for i in CompIndex}
 # Fill in values in all the vectors and matrices in the arrays
 speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
-# Under-relaxation factors
-const gamma_w     = 5e-2                                        # Mass fractions
-const gamma_T     = 5e-2                                           # Temperature
-const gamma_uz    = 1e-0                                              # Velocity
-const gamma_p     = 1e-0                                              # Pressure
+
+A_uzRhoP = zeros(3Nglob,3Nglob)
+b_uzRhoP = zeros(3Nglob)
+coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
+uzRhoP = [uz, rho, p]
+
+A_wT = zeros(7Nglob,7Nglob)
+b_wT = zeros(7Nglob)
+coupleMassTemperature!(w, T,rho, uz, cp, dH, U, lambdaEff, reaction, D,A_w, b_w, A_T, b_T,A_wT, b_wT)
+wT = [wVec, T]
+
+# Under-relaxation factor
+const gamma_wT     = 5e-2                       # Mass fractions and temperature
 
 const maxIter   = 1000                             # Max iterations in the loops
 totIter         = 1                                           # Total iterations
 totRes          = 1.0                           # Initialize the total residual
 
-while totRes > 1e-6
+while totRes > 1e-2
     ############################################################################
     #                           T-w iteration loop                             #
     ############################################################################
 
     # Calculate the residuals
-    res_T = norm(A_T*T - b_T)/abs(mean(b_T))      # 2-norm of the residuals in T
-    res_w = [
-                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(b_w[i]))
-                for i in 1:length(CompIndex)
-            ]                  # A vector with the 2-norms of the residuals in w
+    res_wT = norm(A_wT*wT - b_wT)
     iter = 0                                      # Initialize iteration numbers
-    while (res_T > 1e-7 || maximum(res_w) > 1e-7) && iter < maxIter
-        # Solve for T and apply under-relaxation
-        T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
+    while res_wT > 1e-2 && iter < maxIter
+        # Solve for w and T and apply under-relaxation
+        wT = gamma_wT*(A_wT\b_wT) + (1 - gamma_wT)*wT
 
-        for i = 1:length(CompIndex)            # Loop through the mass fractions
-            c = CompIndex[i]                       # Extract the component index
-            w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]        # Solve
-        end
-        # Solve for CO using 1 - sum of the other mass fractions
-        w[:,2] = 1 - sum(w[:,CompIndex],2)
+        wVec = wT[1:6Nglob]
+        T    = wT[6Nglob+1:end]
+        w    = reshape(wVec,Nglob,Ncomp)[:,revertIndex]
 
         # Update dependent variables
         x   = getMolarFractions(w)         # Matrix with all the molar fractions
@@ -140,95 +145,73 @@ while totRes > 1e-6
                                        # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
 
         # Update the matrices and vectors
-        energyEquation!(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
-        speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
+        coupleMassTemperature!(w, T,rho, uz, cp, dH, U, lambdaEff, reaction, D,A_w, b_w, A_T, b_T,A_wT, b_wT)
 
-        # Update the residuals
-        res_T   = norm(A_T*T - b_T)/abs(mean(b_T))
-        res_w   = [
-                    norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])/abs(mean(b_w[i]))
-                    for i in 1:length(CompIndex)
-                  ]
+        # Update the residual
+        res_wT = norm(A_wT*wT - b_wT)
         # Update iteration number
         iter += 1
     end
     # Display information
     println("T-w iterations: $iter")
-    println("T residual : $res_T")
-    println("w residual : $(maximum(res_w))")
+    println("T-w residual : $res_wT")
     println("Min T: $(minimum(T))")
     println("Min w: $(minimum(w))")
 
-    # Update dependent variables
-    M   = getAvgMolarMass(x)                  # Average molar mass [kg mol^{-1}]
-    rho = M.*p./(R*T)                                      # Density [kg m^{-3}]
-    mu  = getViscosity(T,x)                                   # Viscosity [Pa s]
-    Re  = getReynolds(rho, uz, mu)                             # Reynolds number
-    f   = getFrictionFactor(Re)                                # Friction factor
+    M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
+    mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
+    Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
+    f   = getFrictionFactor(Re)                                    # Friction factor
+
 
     ############################################################################
-    #                           uz-p iteration loop                            #
+    #                           uz-rho-p iteration loop                        #
     ############################################################################
+    
+    coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
 
-    # Update the matrices and vectors for uz and p
-    ergunEquation!(p, rho, uz, f, b_p)
-    continuityEquation!(uz, rho, A_uz)
+    res_uzRhoP = norm(A_uzRhoP*uzRhoP - b_uzRhoP)
+    iter = 0
+    while res_uzRhoP > 1e-7 && iter < maxIter
+        # Solve for velocity, density and pressure  
+        uzRhoP = A_uzRhoP\b_uzRhoP
 
-    # Calculate the residuals
-    res_uz = norm(A_uz*uz - b_uz)/abs(mean(b_uz))    # 2-norm of residuals in uz
-    res_p  = norm(A_p*p[1:Nr:end] - b_p)/mean(b_p)    # 2-norm of residuals in p
-    iter   = 0                                     # Initialize iteration number
-    while (res_uz > 1e-10 || res_p > 1e-10) && iter < maxIter
-        # Solve for p and apply under-relaxation
-        p  = gamma_p*kron(A_p\b_p, ones(Nr)) + (1-gamma_p)*p
-        # Solve for uz and apply under-relaxation
-        uz = gamma_uz*(A_uz\b_uz) + (1-gamma_uz)*uz
-
-        # Update dependent variables
-        rho = M.*p./(R*T)                                  # Density [kg m^{-3}]
-        Re  = getReynolds(rho, uz, mu)                         # Reynolds number
-        f   = getFrictionFactor(Re)                            # Friction factor
+        # Extract variables
+        uz = uzRhoP[1:Nglob]
+        rho = uzRhoP[Nglob+1:2Nglob]
+        p = uzRhoP[2Nglob+1:end]
 
         # Update dependent variables
-        ergunEquation!(p, rho, uz, f, b_p)
-        continuityEquation!(uz, rho, A_uz)
+        Re  = getReynolds(rho, uz, mu)                             # Reynolds number
+        f   = getFrictionFactor(Re)                                # Friction factor
 
+        # Update vectors and matrices
+        coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
         # Update the residuals
-        res_uz = norm(A_uz*uz - b_uz)/abs(mean(b_uz))
-        res_p  = norm(A_p*p[1:Nr:end] - b_p)/abs(mean(b_p))
-        # Update iteration number
+        res_uzRhoP = norm(A_uzRhoP*uzRhoP - b_uzRhoP)
+        # Update iterations
         iter += 1
     end
-    # Display information
-    println("p-uz iterations: $iter")
-    println("p residual : $res_p")
-    println("uz residual : $res_uz")
+    println("uz-rho-p residual : $res_uzRhoP")
+    println("uz-rho-p iterations: $iter")
 
-    # Update dependent variables
+    dH, reaction = getReaction(T,x,p) # Reaction enthalpy and reaction rates
+                                       # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
     lambdaEff, U = getHeatCoefficients(Re, T, x, mu, cp, M)
     D            = getDiffusivity(uz)
 
     # Update the matrices and vectors
-    ergunEquation!(p, rho, uz, f, b_p)
-    continuityEquation!(uz, rho, A_uz)
-    energyEquation!(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
-    speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
+    coupleMassTemperature!(w, T,rho, uz, cp, dH, U, lambdaEff, reaction, D,A_w, b_w, A_T, b_T,A_wT, b_wT)
+    coupleVelocityDensityPressure!(uz, rho, p, M, T, f, A_uz, b_uz, A_p, b_p, A_uzRhoP, b_uzRhoP)
 
     # Update the residuals
-    res_p   = norm(A_p*p[1:Nr:end] - b_p)/abs(mean(b_p))
-    res_uz  = norm(A_uz*uz - b_uz)/abs(mean(b_uz))
-    res_T   = norm(A_T*T - b_T)/abs(mean(b_T))
-    res_w   = [
-                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(b_w[i]))
-                for i in 1:length(CompIndex)
-              ]
+    res_uzRhoP  = norm(A_uzRhoP*uzRhoP - b_uzRhoP)
+    res_wT      = norm(A_wT*wT - b_wT)
     # Calculate the total residual
-    totRes  = res_p + res_uz + res_T + sum(res_w)
+    totRes  = res_uzRhoP + res_wT
     # Display information
-    println("p residual : $res_p")
-    println("uz residual : $res_uz")
-    println("T residual : $res_T")
-    println("w residual : $(maximum(res_w))")
+    println("uz-rho-p residual : $res_uzRhoP")
+    println("w-T residual : $res_wT")
     println("Total residual: $totRes")
     println("Outer loop iterations: $totIter")
     # Update iteration number
@@ -248,7 +231,7 @@ x   = {reshape(x[:,i],Nr,Nz)' for i in 1:Ncomp}
 
 using HDF5, MAT
 
-c = matopen("pairwiseSegregated.mat", "w") do file
+c = matopen("combined.mat", "w") do file
     write(file, "r", r)
     write(file, "z", Z)
     write(file, "T", T)

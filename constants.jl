@@ -1,10 +1,11 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 20          # Number of collocation points in z direction
+const global Nz      = 10          # Number of collocation points in z direction
 const global Ncomp   = 6                         # Number of chemical components
 const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"] # Component names
 const global CompIndex = [6, 5, 3, 4, 1]    # Indices of components to be solved
+const revertIndex    = [5, 6, 3, 4, 2, 1]
 const global Nr      = 10               # Number of radial discretization points
 const global Nglob   = Nz*Nr                         # Global collocation points
 const global Length  = 7                                 # Length of reactor [m]
