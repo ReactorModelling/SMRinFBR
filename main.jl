@@ -31,7 +31,6 @@ Inlet values:
     wN2     = 0.0641
 =# 
 
-const global SMALL = 1000eps(Float64)
 include("constants.jl")
 
 ################################################################################
@@ -48,18 +47,10 @@ const global wH2Oin  = 0.7218 # Inlet mass fraction of H2O
 const global wN2in   = 0.0641 # Inlet mass fraction of N2
 const global wIn     = [wCH4in, wCOin, wCO2in, wH2in, wH2Oin, wN2in]
 
-# Initial guess
+# Initial guess: inlet values in the whol reactor
 uz      = uzIn*ones(Nglob)
 p       = pIn*ones(Nglob)
 T       = Tin*ones(Nglob)
-#=
-wCH4    = [wCH4in*ones(Nr); 0.048ones(Nglob - Nr)]
-wCO     = [wCOin*ones(Nr); 0.1479ones(Nglob - Nr)]
-wCO2    = [wCO2in*ones(Nr); 0.1804ones(Nglob - Nr)]
-wH2     = [wH2in*ones(Nr); 0.0643ones(Nglob - Nr)]
-wH2O    = [wH2Oin*ones(Nr); 0.4954ones(Nglob - Nr)]
-wN2     = wN2in*ones(Nglob)
-=#
 wN2     = wN2in*ones(Nglob)
 wCH4    = wCH4in*ones(Nglob)
 wCO     = wCOin*ones(Nglob) 
@@ -71,143 +62,186 @@ w   = [wCH4 wCO wCO2 wH2 wH2O wN2]          # Matrix with all the mass fractions
 
 x   = getMolarFractions(w)                 # Matrix with all the molar fractions
 M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
-rho = M.*p./(R*T)
+rho = M.*p./(R*T)                                          # Density [kg m^{-3}]
 mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
 Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
 f   = getFrictionFactor(Re)                                    # Friction factor
 cp  = getHeatCapacity(T,x)                    # Heat capacity [J K^{-1} kg^{-1}]
+D   = getDiffusivity(uz)                              # Diffusivity [m^2 s^{-1}]
 dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
                                        # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
-lambdaEff, U = getHeatCoefficients(Re, T, x, mu, cp, M)
-
-D = getDiffusivity(uz)
-
+lambdaEff, U = getHeatCoefficients(Re, T, x, mu, cp, M) # Effective conductivity
+                                                        # [W m^{-1} K^{-1}]
+                                                        # Heat coefficient
+                                                        # [W m^{-2} K^{-1}]
+# Initialize A matrix and b vector for A*uz = b
 A_uz = zeros(Nglob,Nglob)
 b_uz = zeros(Nglob)
+# Fill in values (done by reference)
 continuityEquation!(uz, rho, A_uz, b_uz)
 
+# Initialize A matrix and b vector for A*p = b
+# Note that dim(A_p) = Nz x Nz (no radial variation)
 A_p = zeros(Nz,Nz)
 b_p = zeros(Nz)
+# Fill in values (done by reference)
 ergunEquation!(p, rho, uz, f, A_p, b_p)
 
+# Initialize A matrix and b vector for A*T = b
 A_T = zeros(Nglob, Nglob)
 b_T = zeros(Nglob)
+# Fill in values (done by reference)
 energyEquation!(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
 
+# Initialize an array with all the matrices for the mass fractions to be solved
 A_w = {zeros(Nglob,Nglob) for i in CompIndex}
+# Initialize an array with all the vectors for the mass fractions to be solved
 b_w = {zeros(Nglob) for i in CompIndex}
+# Fill in values in all the vectors and matrices in the arrays
 speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
-gamma_w     = 5e-2
-gamma_T     = 5e-2
-gamma_uz    = 1e-0
-gamma_rho   = 1e-0
+# Under-relaxation factors
+const gamma_w     = 5e-2                                        # Mass fractions
+const gamma_T     = 5e-2                                           # Temperature
+const gamma_uz    = 1e-0                                              # Velocity
+const gamma_p     = 1e-0                                              # Pressure
 
-totIter = 1
-maxIter = 1000
-totRes  = 1.0
+const maxIter   = 1000                             # Max iterations in the loops
+totIter         = 1                                           # Total iterations
+totRes          = 1.0                           # Initialize the total residual
 
 while totRes > 1e-5
-    res_T = norm(A_T*T - b_T)/mean(T)
+    ############################################################################
+    #                           T-w iteration loop                             #
+    ############################################################################
+
+    # Calculate the residuals
+    res_T = norm(A_T*T - b_T)                     # 2-norm of the residuals in T
     res_w = [
-                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(w[:,CompIndex]))
+                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])
                 for i in 1:length(CompIndex)
-            ]
-    iter = 0
+            ]                  # A vector with the 2-norms of the residuals in w
+    iter = 0                                      # Initialize iteration numbers
     while (res_T > 1e-6 || maximum(res_w) > 1e-10) && iter < maxIter
+        # Solve for T and apply under-relaxation
         T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
-        for i = 1:length(CompIndex)
-            c = CompIndex[i]
-            res_w = norm(A_w[i]*w[:,c] - b_w[i])
-            w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]
+
+        for i = 1:length(CompIndex)            # Loop through the mass fractions
+            c = CompIndex[i]                       # Extract the component index
+            w[:,c] = gamma_w*(A_w[i]\b_w[i]) + (1-gamma_w)*w[:,c]        # Solve
         end
+        # Solve for CO using 1 - sum of the other mass fractions
         w[:,2] = 1 - sum(w[:,CompIndex],2)
 
-        x   = getMolarFractions(w)             # Matrix with all the molar fractions
-        cp  = getHeatCapacity(T,x)                # Heat capacity [J K^{-1} kg^{-1}]
-        dH, reaction = getReaction(T,x,p)  # Enthalpy of reaction and reaction rates
+        # Update dependent variables
+        x   = getMolarFractions(w)         # Matrix with all the molar fractions
+        cp  = getHeatCapacity(T,x)            # Heat capacity [J K^{-1} kg^{-1}]
+        dH, reaction = getReaction(T,x,p) # Reaction enthalpy and reaction rates
                                        # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
+
+        # Update the matrices and vectors
         energyEquation!(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
         speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
-        res_T   = norm(A_T*T - b_T)/mean(T)
-        res_w   = sum([norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])/abs(mean(w[:,CompIndex[i]])) for i in 1:length(CompIndex)])
-        iter   += 1
+        # Update the residuals
+        res_T   = norm(A_T*T - b_T)
+        res_w   = [
+                    norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])
+                    for i in 1:length(CompIndex)
+                  ]
+        # Update iteration number
+        iter += 1
     end
+    # Display information
     println("T-w iterations: $iter")
     println("T residual : $res_T")
     println("w residual : $(maximum(res_w))")
     println("Min T: $(minimum(T))")
     println("Min w: $(minimum(w))")
 
+    # Update dependent variables
     M   = getAvgMolarMass(x)                  # Average molar mass [kg mol^{-1}]
-    rho = M.*p./(R*T)
+    rho = M.*p./(R*T)                                      # Density [kg m^{-3}]
     mu  = getViscosity(T,x)                                   # Viscosity [Pa s]
     Re  = getReynolds(rho, uz, mu)                             # Reynolds number
     f   = getFrictionFactor(Re)                                # Friction factor
 
+    ############################################################################
+    #                           uz-p iteration loop                            #
+    ############################################################################
+
+    # Update the matrices and vectors for uz and p
     ergunEquation!(p, rho, uz, f, b_p)
     continuityEquation!(uz, rho, A_uz)
 
-    res_uz = norm(A_uz*uz - b_uz)/mean(uz)
-    res_p  = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
-    iter = 0
+    # Calculate the residuals
+    res_uz = norm(A_uz*uz - b_uz)                    # 2-norm of residuals in uz
+    res_p  = norm(A_p*p[1:Nr:end] - b_p)              # 2-norm of residuals in p
+    iter   = 0                                     # Initialize iteration number
     while (res_uz > 1e-12 || res_p > 1e-12) && iter < maxIter
-        p = kron(A_p\b_p, ones(Nr))
+        # Solve for p and apply under-relaxation
+        p  = gamma_p*kron(A_p\b_p, ones(Nr)) + (1-gamma_p)*p
+        # Solve for uz and apply under-relaxation
         uz = gamma_uz*(A_uz\b_uz) + (1-gamma_uz)*uz
 
-        rho = M.*p./(R*T)
+        # Update dependent variables
+        rho = M.*p./(R*T)                                  # Density [kg m^{-3}]
         Re  = getReynolds(rho, uz, mu)                         # Reynolds number
         f   = getFrictionFactor(Re)                            # Friction factor
 
+        # Update dependent variables
         ergunEquation!(p, rho, uz, f, b_p)
         continuityEquation!(uz, rho, A_uz)
 
-        res_uz = norm(A_uz*uz - b_uz)/abs(mean(uz))
-        res_p  = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
+        # Update the residuals
+        res_uz = norm(A_uz*uz - b_uz)
+        res_p  = norm(A_p*p[1:Nr:end] - b_p)
+        # Update iteration number
         iter += 1
     end
+    # Display information
     println("p-uz iterations: $iter")
     println("p residual : $res_p")
     println("uz residual : $res_uz")
 
-    x   = getMolarFractions(w)                 # Matrix with all the molar fractions
-    M   = getAvgMolarMass(x)                      # Average molar mass [kg mol^{-1}]
-    rho = gamma_rho*M.*p./(R*T) + (1-gamma_rho)*rho
-    mu  = getViscosity(T,x)                                       # Viscosity [Pa s]
-    Re  = getReynolds(rho, uz, mu)                                 # Reynolds number
-    f   = getFrictionFactor(Re)                                    # Friction factor
-    cp  = getHeatCapacity(T,x)                    # Heat capacity [J K^{-1} kg^{-1}]
-    dH, reaction = getReaction(T,x,p)      # Enthalpy of reaction and reaction rates
-                                       # [J kg^{-1} s^{-1}] [mol kg^{-1} s^{-1}]
+    # Update dependent variables
     lambdaEff, U = getHeatCoefficients(Re, T, x, mu, cp, M)
-    D = getDiffusivity(uz)
+    D            = getDiffusivity(uz)
 
+    # Update the matrices and vectors
     ergunEquation!(p, rho, uz, f, b_p)
     continuityEquation!(uz, rho, A_uz)
     energyEquation!(T, rho, uz, cp, dH, U, lambdaEff, A_T, b_T)
     speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
-    res_p   = norm(A_p*p[1:Nr:end] - b_p)/mean(p)
-    res_uz  = norm(A_uz*uz - b_uz)/mean(uz)
-    res_T   = norm(A_T*T - b_T)/mean(T)
+    # Update the residuals
+    res_p   = norm(A_p*p[1:Nr:end] - b_p)
+    res_uz  = norm(A_uz*uz - b_uz)
+    res_T   = norm(A_T*T - b_T)
     res_w   = [
-                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(w[:,CompIndex]))
+                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])
                 for i in 1:length(CompIndex)
               ]
+    # Calculate the total residual
     totRes  = res_p + res_uz + res_T + sum(res_w)
+    # Display information
     println("p residual : $res_p")
     println("uz residual : $res_uz")
     println("T residual : $res_T")
     println("w residual : $(maximum(res_w))")
     println("Total residual: $totRes")
     println("Outer loop iterations: $totIter")
+    # Update iteration number
     totIter += 1
 end
 
-using HDF5, JLD, MAT
+################################################################################
+#        Convert solution vectors to matrices and save the result              #
+################################################################################
 
-c = matopen("segregated.mat", "w") do file
+using HDF5, MAT
+
+c = matopen("pairwiseSegregated.mat", "w") do file
     write(file, "T", T)
     write(file, "rho", rho)
     write(file, "x", x)
