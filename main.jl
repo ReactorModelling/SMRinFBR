@@ -15,7 +15,6 @@ include("energyEquation.jl")
 include("speciesMassBalance.jl")
 include("getDiffusivity.jl")
 include("getDerivative.jl")
-#include("coupleVelocityDensity.jl")
 include("coupleMassTemperature.jl")
 include("coupleVelocityDensityPressure.jl")
 #=
@@ -50,7 +49,7 @@ const global wH2Oin  = 0.7218 # Inlet mass fraction of H2O
 const global wN2in   = 0.0641 # Inlet mass fraction of N2
 const global wIn     = [wCH4in, wCOin, wCO2in, wH2in, wH2Oin, wN2in]
 
-# Initial guess: inlet values in the whol reactor
+# Initial guess: inlet values in the whole reactor
 uz      = uzIn*ones(Nglob)
 p       = pIn*ones(Nglob)
 T       = Tin*ones(Nglob)
@@ -224,7 +223,6 @@ while totRes > 1e-2
                                    M, T, f, 
                                    A_uz, b_uz, A_p, b_p, 
                                    A_uzRhoP, b_uzRhoP)
-
     # Update the residuals
     res_uzRhoP  = norm(A_uzRhoP*uzRhoP - b_uzRhoP)
     res_wT      = norm(A_wT*wT - b_wT)
