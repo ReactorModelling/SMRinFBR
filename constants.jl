@@ -1,24 +1,24 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 10   # Number of collocation points in z direction
-const global Ncomp   = 6    # Number of chemical components
-const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"]
-const global CompIndex = [6, 5, 3, 4, 1]
-const global Nr      = 10    # Number of radial discretization points
-const global Nglob   = Nz*Nr
-const global Length  = 7    # [m]
-const global Radius  = 0.102/2 # [m]
+const global Nz      = 10          # Number of collocation points in z direction
+const global Ncomp   = 6                         # Number of chemical components
+const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"] # Component names
+const global CompIndex = [6, 5, 3, 4, 1]    # Indices of components to be solved
+const global Nr      = 10               # Number of radial discretization points
+const global Nglob   = Nz*Nr                         # Global collocation points
+const global Length  = 7                                 # Length of reactor [m]
+const global Radius  = 0.102/2                            # Radiu of reactor [m]
 dummyZ,dummyA,dummyB,dummyQ = colloc(Nz-2,1,1) # Collocation points and matrices
-const global Z = Length*dummyZ
-const global LagAz = 1/Length*dummyA
-const global LagBz = 1/Length^2*dummyB
-const global Lagz = eye(Nz) # Identity matrix
-dummyR,dummyA,dummyB,dummyQ = colloc(Nr-2,1,1)
-const global r = Radius*dummyR
-const global LagAr = 1/Radius*dummyA
-const global LagBr = 1/Radius^2*dummyB
-const global Lagr = eye(Nr)
+const global Z = Length*dummyZ                       # Scaling of reactor length
+const global LagAz = 1/Length*dummyA             # Scale axial derivative matrix
+const global LagBz = 1/Length^2*dummyB    # Scale axial second derivative matrix
+const global Lagz = eye(Nz)                         # Identity matrix of size Nz
+dummyR,dummyA,dummyB,dummyQ = colloc(Nr-2,1,1) # Collocation points and matrices
+const global r = Radius*dummyR                            # Scale reactor radius
+const global LagAr = 1/Radius*dummyA            # Scale radial derivative matrix
+const global LagBr = 1/Radius^2*dummyB   # Scale radial second derivative matrix
+const global Lagr = eye(Nr) # 
 const global R = 8.3145 # Gas constant [J/K mol]
 
 ################################################################################
