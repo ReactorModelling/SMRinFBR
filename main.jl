@@ -110,19 +110,19 @@ const maxIter   = 1000                             # Max iterations in the loops
 totIter         = 1                                           # Total iterations
 totRes          = 1.0                           # Initialize the total residual
 
-while totRes > 1e-5
+while totRes > 1e-6
     ############################################################################
     #                           T-w iteration loop                             #
     ############################################################################
 
     # Calculate the residuals
-    res_T = norm(A_T*T - b_T)                     # 2-norm of the residuals in T
+    res_T = norm(A_T*T - b_T)/abs(mean(b_T))      # 2-norm of the residuals in T
     res_w = [
-                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])
+                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(b_w[i]))
                 for i in 1:length(CompIndex)
             ]                  # A vector with the 2-norms of the residuals in w
     iter = 0                                      # Initialize iteration numbers
-    while (res_T > 1e-6 || maximum(res_w) > 1e-10) && iter < maxIter
+    while (res_T > 1e-7 || maximum(res_w) > 1e-7) && iter < maxIter
         # Solve for T and apply under-relaxation
         T = gamma_T*(A_T\b_T) + (1 - gamma_T)*T
 
@@ -144,9 +144,9 @@ while totRes > 1e-5
         speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
         # Update the residuals
-        res_T   = norm(A_T*T - b_T)
+        res_T   = norm(A_T*T - b_T)/abs(mean(b_T))
         res_w   = [
-                    norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])
+                    norm(A_w[i]*w[:,CompIndex[i]] - b_w[i])/abs(mean(b_w[i]))
                     for i in 1:length(CompIndex)
                   ]
         # Update iteration number
@@ -175,10 +175,10 @@ while totRes > 1e-5
     continuityEquation!(uz, rho, A_uz)
 
     # Calculate the residuals
-    res_uz = norm(A_uz*uz - b_uz)                    # 2-norm of residuals in uz
-    res_p  = norm(A_p*p[1:Nr:end] - b_p)              # 2-norm of residuals in p
+    res_uz = norm(A_uz*uz - b_uz)/abs(mean(b_uz))    # 2-norm of residuals in uz
+    res_p  = norm(A_p*p[1:Nr:end] - b_p)/mean(b_p)    # 2-norm of residuals in p
     iter   = 0                                     # Initialize iteration number
-    while (res_uz > 1e-12 || res_p > 1e-12) && iter < maxIter
+    while (res_uz > 1e-10 || res_p > 1e-10) && iter < maxIter
         # Solve for p and apply under-relaxation
         p  = gamma_p*kron(A_p\b_p, ones(Nr)) + (1-gamma_p)*p
         # Solve for uz and apply under-relaxation
@@ -194,8 +194,8 @@ while totRes > 1e-5
         continuityEquation!(uz, rho, A_uz)
 
         # Update the residuals
-        res_uz = norm(A_uz*uz - b_uz)
-        res_p  = norm(A_p*p[1:Nr:end] - b_p)
+        res_uz = norm(A_uz*uz - b_uz)/abs(mean(b_uz))
+        res_p  = norm(A_p*p[1:Nr:end] - b_p)/abs(mean(b_p))
         # Update iteration number
         iter += 1
     end
@@ -215,11 +215,11 @@ while totRes > 1e-5
     speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
     # Update the residuals
-    res_p   = norm(A_p*p[1:Nr:end] - b_p)
-    res_uz  = norm(A_uz*uz - b_uz)
-    res_T   = norm(A_T*T - b_T)
+    res_p   = norm(A_p*p[1:Nr:end] - b_p)/abs(mean(b_p))
+    res_uz  = norm(A_uz*uz - b_uz)/abs(mean(b_uz))
+    res_T   = norm(A_T*T - b_T)/abs(mean(b_T))
     res_w   = [
-                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])
+                norm(A_w[i]*w[:,CompIndex[i]]-b_w[i])/abs(mean(b_w[i]))
                 for i in 1:length(CompIndex)
               ]
     # Calculate the total residual
@@ -238,6 +238,13 @@ end
 ################################################################################
 #        Convert solution vectors to matrices and save the result              #
 ################################################################################
+
+T   = reshape(T, Nz, Nr)
+rho = reshape(T, Nz, Nr)
+uz  = reshape(T, Nz, Nr)
+p   = reshape(T, Nz, Nr)
+w   = {reshape(w[:,i],Nz,Nr) for i in Ncomp}
+x   = {reshape(x[:,i],Nz,Nr) for i in Ncomp}
 
 using HDF5, MAT
 
