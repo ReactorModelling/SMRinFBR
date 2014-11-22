@@ -1,39 +1,50 @@
 ################################################################################
 #                                   Constants                                  #
 ################################################################################
-const global Nz      = 10          # Number of collocation points in z direction
-const global Ncomp   = 6                         # Number of chemical components
 const global Comp    = ["CH4", "CO", "CO2", "H2", "H2O", "N2"] # Component names
-const global CompIndex = [6, 5, 3, 4, 1]    # Indices of components to be solved
-const revertIndex    = [5, 6, 3, 4, 2, 1]
+
+const global Nz      = 20          # Number of collocation points in z direction
+const global Ncomp   = 6                         # Number of chemical components
 const global Nr      = 10               # Number of radial discretization points
 const global Nglob   = Nz*Nr                         # Global collocation points
+
+const global CompIndex = [6, 5, 3, 4, 1]    # Indices of components to be solved
+const revertIndex      = [5, 6, 3, 4, 2, 1]    # Indices for reverting wVec to w
+
+
+################################################################################
+#                      Collocation parameters for z                            #
+################################################################################
 const global Length  = 7                                 # Length of reactor [m]
-const global Radius  = 0.102/2                            # Radiu of reactor [m]
 dummyZ,dummyA,dummyB,dummyQ = colloc(Nz-2,1,1) # Collocation points and matrices
 const global Z = Length*dummyZ                       # Scaling of reactor length
 const global LagAz = 1/Length*dummyA             # Scale axial derivative matrix
 const global LagBz = 1/Length^2*dummyB    # Scale axial second derivative matrix
 const global Lagz = eye(Nz)                         # Identity matrix of size Nz
+
+################################################################################
+#                      Collocation parameters for r                            #
+################################################################################
+const global Radius  = 0.102/2                            # Radiu of reactor [m]
 dummyR,dummyA,dummyB,dummyQ = colloc(Nr-2,1,1) # Collocation points and matrices
 const global r = Radius*dummyR                            # Scale reactor radius
 const global LagAr = 1/Radius*dummyA            # Scale radial derivative matrix
 const global LagBr = 1/Radius^2*dummyB   # Scale radial second derivative matrix
 const global Lagr = eye(Nr)                         # Identity matrix of size Nz
-const global R = 8.3145                      # Gas constant   [J K^{-1}mol^{-1}]
 
 ################################################################################
 #                              Reactor parameters                              #
 ################################################################################
-const global void     = 0.528                                    # Void fraction
+const global R          = 8.3145             # Gas constant   [J K^{-1}mol^{-1}]
+const global void       = 0.528                                  # Void fraction
 const global efficiency = 1e-3          # Efficiency factor for pellet diffusion
-const global dInner   = 2*Radius                       # Inner tube diameter [m]
-const global Ta       = 1100.0                         # Ambient temperature [K]
-const global rhoCat   = 2355.2;                   # Catalyst density [kg m^{-3}]
-const global dParticle = 0.0173;                         # Particle diameter [m]
-const global lambdaSt  = 52          # Heat coef. for tube metal[W m^{-1}K^{-1}]
-const global rInner = dInner/2                           # Inner tube radius [m]
-const global rOuter = 0.066                              # Outer tube radius [m]
+const global dInner     = 2*Radius                     # Inner tube diameter [m]
+const global Ta         = 1100.0                       # Ambient temperature [K]
+const global rhoCat     = 2355.2;                 # Catalyst density [kg m^{-3}]
+const global dParticle  = 0.0173;                        # Particle diameter [m]
+const global lambdaSt   = 52         # Heat coef. for tube metal[W m^{-1}K^{-1}]
+const global rInner     = dInner/2                       # Inner tube radius [m]
+const global rOuter     = 0.066                          # Outer tube radius [m]
 
 ################################################################################
 #                              Molar masses                                    #
