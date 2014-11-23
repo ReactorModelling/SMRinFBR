@@ -248,7 +248,7 @@ x   = {reshape(x[:,i],Nr,Nz)' for i in 1:Ncomp}
 
 using HDF5, MAT
 
-c = matopen("pairwiseSegregated.mat", "w") do file
+c = matopen("data/pairwiseSegregated.mat", "w") do file
     write(file, "r", r)
     write(file, "z", Z)
     write(file, "T", T)

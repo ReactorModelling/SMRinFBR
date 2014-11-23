@@ -1,7 +1,7 @@
 % Load results
 clear all
 close all
-load('pairwiseSegregated.mat')
+load('data/pairwiseSegregated.mat')
 % Create meshgrids for r and z
 [R,Z] = meshgrid(r,z);
 %% Temperature plot
