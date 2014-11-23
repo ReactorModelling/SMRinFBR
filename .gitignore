@@ -1,0 +1,5 @@
+*.mat
+*.m~
+*.aux
+*.log
+*.pdf

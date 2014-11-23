@@ -1,0 +1,208 @@
+% This file was created by matlab2tikz v0.5.0 (commit 800cce279cab22a09aed1380864216c9dedfbf54) running on MATLAB 8.4.
+%Copyright (c) 2008--2014, Nico Schlömer <nico.schloemer@gmail.com>
+%All rights reserved.
+%Minimal pgfplots version: 1.3
+%
+%The latest updates can be retrieved from
+%  http://www.mathworks.com/matlabcentral/fileexchange/22022-matlab2tikz
+%where you can also make suggestions and rate matlab2tikz.
+%
+\documentclass[tikz]{standalone}
+\usepackage{pgfplots}
+\usepackage{grffile}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{plotmarks}
+\usepackage{amsmath}
+
+\usepackage{siunitx}
+\begin{document}
+%
+% defining custom colors
+\definecolor{mycolor1}{rgb}{0.00000,0.00000,0.66667}%
+\definecolor{mycolor2}{rgb}{0.00000,0.33333,1.00000}%
+\definecolor{mycolor3}{rgb}{0.00000,0.66667,1.00000}%
+\definecolor{mycolor4}{rgb}{0.00000,1.00000,1.00000}%
+\definecolor{mycolor5}{rgb}{0.33333,1.00000,0.66667}%
+\definecolor{mycolor6}{rgb}{0.66667,1.00000,0.33333}%
+\definecolor{mycolor7}{rgb}{1.00000,1.00000,0.00000}%
+\definecolor{mycolor8}{rgb}{1.00000,0.66667,0.00000}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=6.765401in,
+height=4in,
+at={(0in,0in)},
+scale only axis,
+every outer x axis line/.append style={black},
+every x tick label/.append style={font=\color{black}},
+xmin=0,
+xmax=7,
+xlabel={$z\quad\left[\SI{}{\meter}\right]$},
+every outer y axis line/.append style={black},
+every y tick label/.append style={font=\color{black}},
+ymin=1.8,
+ymax=3.8,
+ylabel={$u_z\quad\left[\SI{}{\meter\per\second}\right]$},
+title style={font=\bfseries},
+title={Axial velocity in the reactor},
+axis x line*=bottom,
+axis y line*=left,
+legend style={at={(0.97,0.5)},anchor=east,draw=black,legend cell align=left},
+scaled x ticks = false,
+x tick label style={/pgf/number format/fixed,/pgf/number format/precision=1,/pgf/number format/zerofill=true},
+legend style={draw=white}
+]
+\addplot [color=mycolor1,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	1.895534463951\\
+0.711667329052306	2.38876173894485\\
+1.66063656529285	2.80951637992556\\
+2.85797875126523	3.18532194940064\\
+4.14202124873477	3.37387391635151\\
+5.33936343470715	3.49978110555135\\
+6.28833267094769	3.56334832565138\\
+6.86101449774138	3.59386447490311\\
+7	3.60194528786048\\
+};
+\addlegendentry{$r = \SI{0.00e+00}{\meter}$};
+
+\addplot [color=blue,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	1.89561369742476\\
+0.711667329052306	2.38882760649607\\
+1.66063656529285	2.80956255509906\\
+2.85797875126523	3.1853250691121\\
+4.14202124873477	3.37387423944405\\
+5.33936343470715	3.49977143995879\\
+6.28833267094769	3.56333522502244\\
+6.86101449774138	3.59385207938508\\
+7	3.60193208953217\\
+};
+\addlegendentry{$r = \SI{1.01e-03}{\meter}$};
+
+\addplot [color=mycolor2,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	1.89762462691915\\
+0.711667329052306	2.39048160203478\\
+1.66063656529285	2.81072829546794\\
+2.85797875126523	3.18539977781421\\
+4.14202124873477	3.37388179661347\\
+5.33936343470715	3.49952553191048\\
+6.28833267094769	3.56300340620525\\
+6.86101449774138	3.59353789286203\\
+7	3.60159742762471\\
+};
+\addlegendentry{$r = \SI{5.19e-03}{\meter}$};
+
+\addplot [color=mycolor3,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	1.90725935743202\\
+0.711667329052306	2.39794007305569\\
+1.66063656529285	2.8161572823496\\
+2.85797875126523	3.18564134491223\\
+4.14202124873477	3.3739064008191\\
+5.33936343470715	3.4983347045779\\
+6.28833267094769	3.56143630118568\\
+6.86101449774138	3.59204711609761\\
+7	3.60000750249201\\
+};
+\addlegendentry{$r = \SI{1.21e-02}{\meter}$};
+
+\addplot [color=mycolor4,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	1.93277659805948\\
+0.711667329052306	2.41474011858294\\
+1.66063656529285	2.8296219253783\\
+2.85797875126523	3.18570668118844\\
+4.14202124873477	3.37408643887788\\
+5.33936343470715	3.49530598399119\\
+6.28833267094769	3.55764999910555\\
+6.86101449774138	3.58840645585282\\
+7	3.59610194699542\\
+};
+\addlegendentry{$r = \SI{2.08e-02}{\meter}$};
+
+\addplot [color=mycolor5,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	1.98305899555306\\
+0.711667329052306	2.44000093531413\\
+1.66063656529285	2.85436284014264\\
+2.85797875126523	3.18553827083805\\
+4.14202124873477	3.37619631124741\\
+5.33936343470715	3.49123317970028\\
+6.28833267094769	3.55283585378702\\
+6.86101449774138	3.5836950576327\\
+7	3.59089800018016\\
+};
+\addlegendentry{$r = \SI{3.02e-02}{\meter}$};
+
+\addplot [color=mycolor6,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	2.06219910814008\\
+0.711667329052306	2.47017023370206\\
+1.66063656529285	2.89366179087915\\
+2.85797875126523	3.18947353662618\\
+4.14202124873477	3.38711682709311\\
+5.33936343470715	3.49298266014115\\
+6.28833267094769	3.55475976424201\\
+6.86101449774138	3.58545368597961\\
+7	3.59204082120392\\
+};
+\addlegendentry{$r = \SI{3.89e-02}{\meter}$};
+
+\addplot [color=mycolor7,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	2.15814182171524\\
+0.711667329052306	2.50241800363098\\
+1.66063656529285	2.94697072122423\\
+2.85797875126523	3.20535100784841\\
+4.14202124873477	3.41491599320769\\
+5.33936343470715	3.51063289289628\\
+6.28833267094769	3.57406647273462\\
+6.86101449774138	3.60424158110402\\
+7	3.61039370222194\\
+};
+\addlegendentry{$r = \SI{4.58e-02}{\meter}$};
+
+\addplot [color=mycolor8,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	2.23562298580431\\
+0.711667329052306	2.52896461455941\\
+1.66063656529285	2.99618628296181\\
+2.85797875126523	3.2278728573673\\
+4.14202124873477	3.44902852209121\\
+5.33936343470715	3.53723697826397\\
+6.28833267094769	3.60283719130784\\
+6.86101449774138	3.63244092995902\\
+7	3.63848869963772\\
+};
+\addlegendentry{$r = \SI{5.00e-02}{\meter}$};
+
+\addplot [color=red!50!mycolor8,solid,line width=1.5pt]
+  table[row sep=crcr]{%
+0	1.89\\
+0.138985502258623	2.25707265794245\\
+0.711667329052306	2.53659761889653\\
+1.66063656529285	3.01085302609774\\
+2.85797875126523	3.23561539462279\\
+4.14202124873477	3.46024042816084\\
+5.33936343470715	3.54646337530578\\
+6.28833267094769	3.61277132734452\\
+6.86101449774138	3.64219974919953\\
+7	3.64825588352256\\
+};
+\addlegendentry{$r = \SI{5.10e-02}{\meter}$};
+
+\end{axis}
+\end{tikzpicture}%
+\end{document}
