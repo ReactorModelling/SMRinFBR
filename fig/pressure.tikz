@@ -1,0 +1,68 @@
+% This file was created by matlab2tikz v0.5.0 (commit 800cce279cab22a09aed1380864216c9dedfbf54) running on MATLAB 8.4.
+%Copyright (c) 2008--2014, Nico Schlömer <nico.schloemer@gmail.com>
+%All rights reserved.
+%Minimal pgfplots version: 1.3
+%
+%The latest updates can be retrieved from
+%  http://www.mathworks.com/matlabcentral/fileexchange/22022-matlab2tikz
+%where you can also make suggestions and rate matlab2tikz.
+%
+\documentclass[tikz]{standalone}
+\usepackage{pgfplots}
+\usepackage{grffile}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{plotmarks}
+\usepackage{amsmath}
+
+\usepackage{siunitx}
+\begin{document}
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=6.765401in,
+height=4in,
+at={(0in,0in)},
+scale only axis,
+separate axis lines,
+every outer x axis line/.append style={black},
+every x tick label/.append style={font=\color{black}},
+xmin=0,
+xmax=7,
+xlabel={$z\quad\left[\SI{}{\meter}\right]$},
+every outer y axis line/.append style={black},
+every y tick label/.append style={font=\color{black}},
+ymin=2760000,
+ymax=2900000,
+ylabel={$p\quad\left[\SI{}{\pascal}\right]$},
+title style={font=\bfseries},
+title={Pressure in the reactor},
+scaled x ticks = false,
+x tick label style={/pgf/number format/fixed,/pgf/number format/precision=1,/pgf/number format/zerofill=true},
+legend style={draw=white}
+]
+\addplot [color=black,solid,line width=1.5pt,forget plot]
+  table[row sep=crcr]{%
+0	2900000\\
+0.0295219105267417	2899661.8170516\\
+0.154616176500108	2898164.51780237\\
+0.375891367258555	2895297.29969402\\
+0.687032643596169	2890905.81371522\\
+1.07909534928876	2884894.26571324\\
+1.54080209124118	2877274.89599189\\
+2.05887093488005	2868172.9056817\\
+2.61839821007973	2857831.44163509\\
+3.20328745435393	2846582.24766052\\
+3.79671254564607	2834814.00594798\\
+4.38160178992027	2822943.72721273\\
+4.94112906511995	2811386.95532571\\
+5.45919790875882	2800544.45962675\\
+5.92090465071124	2790783.65853467\\
+6.31296735640383	2782432.5147823\\
+6.62410863274145	2775767.70666017\\
+6.84538382349989	2771009.34455877\\
+6.97047808947326	2768312.73049284\\
+7	2767675.66714842\\
+};
+\end{axis}
+\end{tikzpicture}%
+\end{document}
