@@ -103,7 +103,7 @@ b_w = {zeros(Nglob) for i in CompIndex}
 speciesMassBalance!(w, rho, uz, reaction, D, A_w, b_w)
 
 # Initialize total A (sparse)
-A = zeros(10Nglob,10Nglob)
+A = spzeros(10Nglob,10Nglob)
 # Initialize total B
 B = zeros(10Nglob,1)
 # Fill A and B (by reference)
